@@ -62,18 +62,30 @@ public class AppBootstrap : MonoBehaviour
         string chrome2 = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
         string chrome = File.Exists(chrome1) ? chrome1 : chrome2;
 
+        if (!File.Exists(chrome))
+        {
+            UnityEngine.Debug.LogError("Chrome not found! Please install Chrome or update the path.");
+            return;
+        }
+
+        // Get screen resolution for fullscreen
+        int screenWidth = Screen.currentResolution.width;
+        int screenHeight = Screen.currentResolution.height;
+
         Process.Start(new ProcessStartInfo
         {
             FileName = chrome,
             Arguments =
-                "--app=http://localhost:8081/gaze.html " +
+                $"--app=http://localhost:8081/gaze.html " +
+                $"--window-size={screenWidth},{screenHeight} " +
+                "--start-maximized " +
                 "--use-fake-ui-for-media-stream " +
                 "--disable-background-timer-throttling " +
                 "--disable-backgrounding-occluded-windows",
             UseShellExecute = true
         });
 
-        UnityEngine.Debug.Log("Chrome launched");
+        UnityEngine.Debug.Log($"Chrome launched in fullscreen mode ({screenWidth}x{screenHeight})");
     }
 }
 

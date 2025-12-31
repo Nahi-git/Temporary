@@ -5,7 +5,12 @@ using System.Collections;
 
 public class GazeWebSocketClient : MonoBehaviour
 {
-    public Vector2 gaze;
+    [Header("Gaze Data")]
+    public Vector2 rawGaze;
+    
+    [Header("Browser Window Info")]
+    public Vector2 browserWindowSize = Vector2.zero; 
+    
     WebSocket ws;
 
     void Start()
@@ -15,44 +20,65 @@ public class GazeWebSocketClient : MonoBehaviour
 
     IEnumerator ConnectWithRetry()
     {
-        // Wait for Node to start
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(2.5f);
 
         while (true)
         {
             ws = new WebSocket("ws://localhost:8765");
 
-            ws.OnOpen += () =>
-            {
-                Debug.Log("Unity connected to WebSocket");
-            };
-
-            ws.OnError += e =>
-            {
-                Debug.LogWarning("WebSocket error, retrying...");
-            };
+            ws.OnOpen += () => UnityEngine.Debug.Log("Unity connected to WebSocket");
+            ws.OnError += (e) => UnityEngine.Debug.LogWarning("WebSocket error, retrying...");
 
             ws.OnMessage += bytes =>
             {
-                string json = Encoding.UTF8.GetString(bytes);
-                var data = JsonUtility.FromJson<GazeData>(json);
-                gaze = new Vector2(data.x, data.y);
+                var json = Encoding.UTF8.GetString(bytes);
+                
+                //check if this is a window size message
+                if (json.Contains("\"type\"") && json.Contains("windowSize"))
+                {
+                    try
+                    {
+                        var sizeData = JsonUtility.FromJson<WindowSizeData>(json);
+                        if (sizeData.width > 0 && sizeData.height > 0)
+                        {
+                            browserWindowSize = new Vector2(sizeData.width, sizeData.height);
+                            UnityEngine.Debug.Log($"Browser window size received: {browserWindowSize.x}x{browserWindowSize.y}");
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        UnityEngine.Debug.LogWarning($"Failed to parse window size: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    //regular gaze data - try to parse as GazeData
+                    try
+                    {
+                        var data = JsonUtility.FromJson<GazeData>(json);
+                        if (data.x != 0 || data.y != 0 || json.Contains("\"x\"")) // Valid gaze data
+                        {
+                            rawGaze = new Vector2(data.x, data.y);
+                        }
+                    }
+                    catch
+                    {
+                        //ignore parse errors for gaze data
+                    }
+                }
             };
 
-            var connectTask = ws.Connect();
+            var task = ws.Connect();
 
-            // Wait up to 2 seconds
             float timeout = 2f;
-            while (!connectTask.IsCompleted && timeout > 0f)
+            while (!task.IsCompleted && timeout > 0f)
             {
                 timeout -= Time.deltaTime;
                 yield return null;
             }
 
             if (ws.State == WebSocketState.Open)
-            {
-                yield break; // connected successfully
-            }
+                yield break;
 
             yield return new WaitForSeconds(1f);
         }
@@ -67,15 +93,16 @@ public class GazeWebSocketClient : MonoBehaviour
 
     async void OnApplicationQuit()
     {
-        if (ws != null)
-            await ws.Close();
+        if (ws != null) await ws.Close();
     }
 
     [System.Serializable]
-    class GazeData
-    {
-        public float x;
-        public float y;
+    class GazeData { public float x; public float y; }
+    
+    [System.Serializable]
+    class WindowSizeData { 
+        public string type; 
+        public float width; 
+        public float height; 
     }
 }
-
