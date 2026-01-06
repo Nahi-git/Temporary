@@ -9,7 +9,8 @@ public class UnityGazeCalibrator : MonoBehaviour
     [Header("References")]
     public GazeWebSocketClient gazeClient;
     public RectTransform calibrationDot;   
-    public Text instructionText;           
+    public Text instructionText;
+    public GameObject keyboardPanel;          
 
     [Header("Calibration Settings")]
     public float marginPx = 120f;          
@@ -40,6 +41,7 @@ public class UnityGazeCalibrator : MonoBehaviour
         if (!calibrationDot) UnityEngine.Debug.LogError("Assign calibrationDot (UI)");
         Build9PointLayout();
         HideDot();
+        HideKeyboard();  
         SetInstruction("Press C to calibrate.");
     }
 
@@ -90,6 +92,7 @@ public class UnityGazeCalibrator : MonoBehaviour
         targetPoints.Clear();
         Build9PointLayout();
 
+        HideKeyboard();  
         ShowDotAt(layout[index]);
         SetInstruction("Look at the dot and press SPACE to capture (repeat for each point).");
     }
@@ -210,6 +213,7 @@ public class UnityGazeCalibrator : MonoBehaviour
             ema = ApplyAffine(gazeClient.rawGaze);
 
             HideDot();
+            ShowKeyboard();  
             SetInstruction("Calibration complete. Press C to recalibrate.");
         }
         else
@@ -229,6 +233,22 @@ public class UnityGazeCalibrator : MonoBehaviour
     void HideDot()
     {
         calibrationDot.gameObject.SetActive(false);
+    }
+
+    void ShowKeyboard()
+    {
+        if (keyboardPanel != null)
+        {
+            keyboardPanel.SetActive(true);
+        }
+    }
+
+    void HideKeyboard()
+    {
+        if (keyboardPanel != null)
+        {
+            keyboardPanel.SetActive(false);
+        }
     }
 
     void SetInstruction(string s)
