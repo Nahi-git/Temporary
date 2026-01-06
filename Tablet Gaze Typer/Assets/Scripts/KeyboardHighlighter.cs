@@ -101,9 +101,21 @@ public class KeyboardHighlighter : MonoBehaviour
         // convert gaze screen position to canvas coordinates
         float clampedX = Mathf.Clamp(screenPosition.x, 0, Screen.width);
         float clampedY = Mathf.Clamp(screenPosition.y, 0, Screen.height);
-        float gazeCanvasX = clampedX - Screen.width / 2f;
-        float gazeCanvasY = -(clampedY - Screen.height / 2f);
-        Vector2 gazeCanvasPos = new Vector2(gazeCanvasX, gazeCanvasY);
+        
+        float flippedY = Screen.height - clampedY;
+        
+        Camera camera = null;
+        if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
+        {
+            camera = canvas.worldCamera;
+        }
+        
+        Vector2 gazeCanvasPos;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvas.GetComponent<RectTransform>(),
+            new Vector2(clampedX, flippedY),
+            camera,
+            out gazeCanvasPos);
         
         foreach (Button button in keyboardButtons)
         {

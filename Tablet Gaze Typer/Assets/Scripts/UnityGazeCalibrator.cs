@@ -256,15 +256,29 @@ public class UnityGazeCalibrator : MonoBehaviour
         if (instructionText) instructionText.text = s;
     }
 
-    //assumes Canvas is Screen Space - Overlay and dot is under it.
     Vector2 ScreenPxToCanvasAnchored(Vector2 screenPx)
     {
-        float x = screenPx.x - Screen.width / 2f;
-        float y = -(screenPx.y - Screen.height / 2f);
-        return new Vector2(x, y);
+        Canvas canvas = calibrationDot.GetComponentInParent<Canvas>();
+        if (canvas == null) return Vector2.zero;
+        
+        Camera camera = null;
+        if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
+        {
+            camera = canvas.worldCamera;
+        }
+        
+        float flippedY = Screen.height - screenPx.y;
+        
+        Vector2 localPoint;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvas.GetComponent<RectTransform>(),
+            new Vector2(screenPx.x, flippedY),
+            camera,
+            out localPoint);
+        
+        return localPoint;
     }
 
-    // --- Math: affine fitting ---
     Vector2 ApplyAffine(Vector2 raw)
     {
         float X = a * raw.x + b * raw.y + c;

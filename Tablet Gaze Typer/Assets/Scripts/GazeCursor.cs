@@ -61,9 +61,32 @@ public class GazeCursor : MonoBehaviour
         float clampedY = Mathf.Clamp(gazePosition.y, 0, Screen.height);
         
         //convert browser screen coords to Unity canvas coords
-        float x = clampedX - Screen.width / 2f;
-        float y = -(clampedY - Screen.height / 2f);
-
-        rt.anchoredPosition = new Vector2(x, y);
+        float flippedY = Screen.height - clampedY;
+        
+        Canvas canvas = rt.GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            Camera camera = null;
+            if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
+            {
+                camera = canvas.worldCamera;
+            }
+            
+            Vector2 localPoint;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                canvas.GetComponent<RectTransform>(),
+                new Vector2(clampedX, flippedY),
+                camera,
+                out localPoint);
+            
+            rt.anchoredPosition = localPoint;
+        }
+        else
+        {
+            // fallback to simple method if no canvas found
+            float x = clampedX - Screen.width / 2f;
+            float y = -(clampedY - Screen.height / 2f);
+            rt.anchoredPosition = new Vector2(x, y);
+        }
     }
 }
