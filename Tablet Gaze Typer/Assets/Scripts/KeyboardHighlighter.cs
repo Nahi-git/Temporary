@@ -1,0 +1,159 @@
+using UnityEngine;
+using UnityEngine.UI;
+using System.Collections.Generic;
+
+public class KeyboardHighlighter : MonoBehaviour
+{
+    [Header("References")]
+    public UnityGazeCalibrator calibrator;
+    public GazeWebSocketClient gazeSource;
+    public GameObject keyboardPanel; 
+    
+    [Header("Highlight Settings")]
+    public Color highlightColor = new Color(1f, 0.8f, 0f, 1f);  // Yellow/orange highlight
+    public Color normalColor = Color.white;  
+    
+    private List<Button> keyboardButtons = new List<Button>();
+    private Button currentlyHighlightedButton = null;
+    private Dictionary<Button, Color> originalColors = new Dictionary<Button, Color>();
+    
+    void Start()
+    {
+        if (keyboardPanel != null)
+        {
+            CollectKeyboardButtons();
+        }
+        else
+        {
+            UnityEngine.Debug.LogWarning("KeyboardHighlighter: KeyboardPanel not assigned!");
+        }
+    }
+    
+    void CollectKeyboardButtons()
+    {
+        keyboardButtons.Clear();
+        originalColors.Clear();
+        
+        Button[] buttons = keyboardPanel.GetComponentsInChildren<Button>();
+        
+        foreach (Button button in buttons)
+        {
+            keyboardButtons.Add(button);
+            
+            Image buttonImage = button.GetComponent<Image>();
+            if (buttonImage != null)
+            {
+                originalColors[button] = buttonImage.color;
+            }
+        }
+        
+        UnityEngine.Debug.Log($"KeyboardHighlighter: Found {keyboardButtons.Count} buttons");
+    }
+    
+    void Update()
+    {
+        if (keyboardButtons.Count == 0 || keyboardPanel == null || !keyboardPanel.activeSelf)
+        {
+            return;
+        }
+        
+        Vector2 gazePosition = GetGazePosition();
+        
+        Button nearestButton = FindNearestButton(gazePosition);
+        
+        if (nearestButton != currentlyHighlightedButton)
+        {
+            if (currentlyHighlightedButton != null)
+            {
+                UnhighlightButton(currentlyHighlightedButton);
+            }
+            if (nearestButton != null)
+            {
+                HighlightButton(nearestButton);
+            }
+            
+            currentlyHighlightedButton = nearestButton;
+        }
+    }
+    
+    Vector2 GetGazePosition()
+    {
+        if (calibrator != null && calibrator.calibrated)
+        {
+            return calibrator.calibratedGaze;
+        }
+        else if (gazeSource != null)
+        {
+            return gazeSource.rawGaze;
+        }
+        
+        return Vector2.zero;
+    }
+    
+    Button FindNearestButton(Vector2 screenPosition)
+    {
+        Button nearestButton = null;
+        float nearestDistance = float.MaxValue;
+        
+        Canvas canvas = keyboardPanel.GetComponentInParent<Canvas>();
+        if (canvas == null) return null;
+        
+        // convert gaze screen position to canvas coordinates
+        float clampedX = Mathf.Clamp(screenPosition.x, 0, Screen.width);
+        float clampedY = Mathf.Clamp(screenPosition.y, 0, Screen.height);
+        float gazeCanvasX = clampedX - Screen.width / 2f;
+        float gazeCanvasY = -(clampedY - Screen.height / 2f);
+        Vector2 gazeCanvasPos = new Vector2(gazeCanvasX, gazeCanvasY);
+        
+        foreach (Button button in keyboardButtons)
+        {
+            if (button == null || !button.gameObject.activeSelf) continue;
+            
+            RectTransform buttonRect = button.GetComponent<RectTransform>();
+            if (buttonRect == null) continue;
+            
+            Vector2 buttonCenter = buttonRect.anchoredPosition;
+            
+            float distance = Vector2.Distance(gazeCanvasPos, buttonCenter);
+            
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestButton = button;
+            }
+        }
+        
+        return nearestButton;
+    }
+    
+    void HighlightButton(Button button)
+    {
+        Image buttonImage = button.GetComponent<Image>();
+        if (buttonImage != null)
+        {
+            buttonImage.color = highlightColor;
+        }
+    }
+    
+    void UnhighlightButton(Button button)
+    {
+        Image buttonImage = button.GetComponent<Image>();
+        if (buttonImage != null)
+        {
+            if (originalColors.ContainsKey(button))
+            {
+                buttonImage.color = originalColors[button];
+            }
+            else
+            {
+                buttonImage.color = normalColor;
+            }
+        }
+    }
+    
+    public void RefreshButtonList()
+    {
+        CollectKeyboardButtons();
+    }
+}
+
