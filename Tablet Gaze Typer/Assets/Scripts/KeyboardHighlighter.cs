@@ -10,12 +10,13 @@ public class KeyboardHighlighter : MonoBehaviour
     public GameObject keyboardPanel; 
     
     [Header("Highlight Settings")]
-    public Color highlightColor = new Color(1f, 0.8f, 0f, 1f);  // Yellow/orange highlight
+    public Color highlightColor = new Color(1f, 0.8f, 0f, 1f); 
     public Color normalColor = Color.white;  
     
     private List<Button> keyboardButtons = new List<Button>();
     private Button currentlyHighlightedButton = null;
     private Dictionary<Button, Color> originalColors = new Dictionary<Button, Color>();
+    public Button CurrentlyHighlightedButton => currentlyHighlightedButton;
     
     void Start()
     {
