@@ -376,6 +376,12 @@ public class ThumbTypingController : MonoBehaviour
         }
         
         selectedKey = centerButton;
+        
+        //highlight the center key on keyboard initially
+        if (keyboardHighlighter != null && selectedKey != null)
+        {
+            keyboardHighlighter.HighlightButtonExternal(selectedKey);
+        }
     }
     
     string GetButtonText(Button button)
@@ -519,6 +525,12 @@ public class ThumbTypingController : MonoBehaviour
         {
             selectedKey = nearestKey;
             UpdateKeyVisuals();
+            
+            //highlight corresponding button on keyboard
+            if (keyboardHighlighter != null && selectedKey != null)
+            {
+                keyboardHighlighter.HighlightButtonExternal(selectedKey);
+            }
         }
     }
     
@@ -569,6 +581,12 @@ public class ThumbTypingController : MonoBehaviour
         ClearSurroundingKeys();
         selectedKey = null;
         centerKeyButton = null;
+        
+        //resume automatic keyboard highlighting
+        if (keyboardHighlighter != null)
+        {
+            keyboardHighlighter.ResumeAutomaticHighlighting();
+        }
     }
     
     void TypeSelectedKey()

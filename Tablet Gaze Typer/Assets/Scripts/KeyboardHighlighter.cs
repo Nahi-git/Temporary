@@ -16,6 +16,7 @@ public class KeyboardHighlighter : MonoBehaviour
     private List<Button> keyboardButtons = new List<Button>();
     private Button currentlyHighlightedButton = null;
     private Dictionary<Button, Color> originalColors = new Dictionary<Button, Color>();
+    private bool externalHighlightActive = false;
     public Button CurrentlyHighlightedButton => currentlyHighlightedButton;
     
     void Start()
@@ -53,6 +54,12 @@ public class KeyboardHighlighter : MonoBehaviour
     
     void Update()
     {
+        //skip automatic highlighting if external highlight is active
+        if (externalHighlightActive)
+        {
+            return;
+        }
+        
         if (keyboardButtons.Count == 0 || keyboardPanel == null || !keyboardPanel.activeSelf)
         {
             return;
@@ -162,6 +169,30 @@ public class KeyboardHighlighter : MonoBehaviour
                 buttonImage.color = normalColor;
             }
         }
+    }
+    
+    //public method to highlight a button from external scripts (this case is the thumb typing controller)
+    public void HighlightButtonExternal(Button button)
+    {
+        if (button == null) return;
+        
+        externalHighlightActive = true;
+        
+        //unhighlight current button if different
+        if (currentlyHighlightedButton != null && currentlyHighlightedButton != button)
+        {
+            UnhighlightButton(currentlyHighlightedButton);
+        }
+        
+        //highlight new button
+        HighlightButton(button);
+        currentlyHighlightedButton = button;
+    }
+    
+    //public method to resume automatic highlighting
+    public void ResumeAutomaticHighlighting()
+    {
+        externalHighlightActive = false;
     }
     
     public void RefreshButtonList()
