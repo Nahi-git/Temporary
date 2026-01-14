@@ -53,8 +53,35 @@ public class UnityGazeCalibrator : MonoBehaviour
             StartCalibration();
         }
 
-        //if calibrating, space captures for current point
+        //if calibrating, space/tap/click captures for current point
+        bool captureInput = false;
         if (isCalibrating && Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            captureInput = true;
+        }
+        //check for touch input
+        if (isCalibrating && !captureInput)
+        {
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null && touchscreen.touches.Count > 0)
+            {
+                if (touchscreen.touches[0].press.wasPressedThisFrame)
+                {
+                    captureInput = true;
+                }
+            }
+        } 
+        //check for mouse click
+        if (isCalibrating && !captureInput)
+        {
+            Mouse mouse = Mouse.current;
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            {
+                captureInput = true;
+            }
+        }
+        
+        if (captureInput)
         {
             StartCoroutine(CaptureCurrentPoint());
         }
