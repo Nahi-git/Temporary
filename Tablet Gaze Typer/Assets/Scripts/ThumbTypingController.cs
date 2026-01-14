@@ -579,17 +579,63 @@ public class ThumbTypingController : MonoBehaviour
         }
         
         string keyText = GetButtonText(selectedKey);
+        string buttonName = selectedKey.gameObject.name;
         
-        if (string.IsNullOrEmpty(keyText))
+        bool isSpace = buttonName == "Key_Space";
+        bool isBackspace = buttonName == "Key_Backspace";
+        
+        //if it's space or backspace, handle directly
+        if (isSpace)
+        {
+            keyText = " ";
+        }
+        else if (isBackspace)
+        {
+            keyText = "";
+        }
+        else if (string.IsNullOrEmpty(keyText))
         {
             return;
+        }
+        
+        //process special keys for other buttons
+        string normalized = keyText.Trim().ToLower();
+        bool isBackspaceByText = normalized == "backspace" || normalized == "←" || normalized == "delete";
+        bool isSpaceByText = normalized == "space" || normalized == "space bar" || normalized == "spacebar";
+        
+        string processedText;
+        if (isBackspace || isBackspaceByText)
+        {
+            processedText = "";
+        }
+        else if (isSpace || isSpaceByText)
+        {
+            processedText = " ";
+        }
+        else
+        {
+            processedText = ProcessSpecialKey(keyText);
         }
         
         //type into input field if available
         if (targetInputField != null)
         {
-            targetInputField.text += keyText;
-            targetInputField.caretPosition = targetInputField.text.Length;
+            if (isBackspace)
+            {
+                //handle backspace
+                if (targetInputField.text.Length > 0)
+                {
+                    targetInputField.text = targetInputField.text.Substring(0, targetInputField.text.Length - 1);
+                    targetInputField.caretPosition = targetInputField.text.Length;
+                }
+                UnityEngine.Debug.Log($"Backspace pressed");
+            }
+            else if (!string.IsNullOrEmpty(processedText))
+            {
+                targetInputField.text += processedText;
+                targetInputField.caretPosition = targetInputField.text.Length;
+                UnityEngine.Debug.Log($"Typed: {keyText} -> '{processedText}'");
+            }
         }
         else
         {
@@ -600,12 +646,53 @@ public class ThumbTypingController : MonoBehaviour
                 TMP_InputField inputField = selectedObj.GetComponent<TMP_InputField>();
                 if (inputField != null)
                 {
-                    inputField.text += keyText;
-                    inputField.caretPosition = inputField.text.Length;
+                    if (isBackspace)
+                    {
+                        //handle backspace
+                        if (inputField.text.Length > 0)
+                        {
+                            inputField.text = inputField.text.Substring(0, inputField.text.Length - 1);
+                            inputField.caretPosition = inputField.text.Length;
+                        }
+                        UnityEngine.Debug.Log($"Backspace pressed");
+                    }
+                    else if (!string.IsNullOrEmpty(processedText))
+                    {
+                        inputField.text += processedText;
+                        inputField.caretPosition = inputField.text.Length;
+                        UnityEngine.Debug.Log($"Typed: {keyText} -> '{processedText}'");
+                    }
                 }
             }
         }
+    }
+    
+    string ProcessSpecialKey(string keyText)
+    {
+        //normalize the text for comparison
+        string normalized = keyText.Trim().ToLower();
         
-        UnityEngine.Debug.Log($"Typed: {keyText}");
+        //handle special keys
+        if (normalized == "space" || normalized == "space bar" || normalized == "spacebar" || normalized == " ")
+        {
+            return " ";
+        }
+        
+        switch (normalized)
+        {
+            case "enter":
+            case "return":
+                return "\n";
+            case "tab":
+                return "\t";
+            default:
+                //if it's a single character, return it as-is
+                if (keyText.Length == 1)
+                {
+                    return keyText;
+                }
+                //otherwise return empty (might be a label like "Shift", "Ctrl", etc. that we don't want to type)
+                return "";
+        }
     }
 }
