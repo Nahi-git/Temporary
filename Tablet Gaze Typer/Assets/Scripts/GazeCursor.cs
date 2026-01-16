@@ -8,10 +8,11 @@ public class GazeCursor : MonoBehaviour
     public UnityGazeCalibrator calibrator; 
     
     [Header("Visual Feedback")]
-    public Image cursorImage; //change color when calibrated
+    public Image cursorImage;
     
     RectTransform rt;
     private bool wasCalibrated = false;
+    private bool isVisible = true;
 
     void Start()
     {
@@ -19,6 +20,30 @@ public class GazeCursor : MonoBehaviour
         if (cursorImage == null)
         {
             cursorImage = GetComponent<Image>();
+        }
+        UpdateVisibility();
+    }
+    
+    public void SetVisibility(bool visible)
+    {
+        isVisible = visible;
+        UpdateVisibility();
+    }
+    
+    public bool GetVisibility()
+    {
+        return isVisible;
+    }
+    
+    private void UpdateVisibility()
+    {
+        if (cursorImage != null)
+        {
+            cursorImage.enabled = isVisible;
+        }
+        else if (rt != null)
+        {
+            rt.gameObject.SetActive(isVisible);
         }
     }
 
@@ -56,11 +81,8 @@ public class GazeCursor : MonoBehaviour
             wasCalibrated = usingCalibrated;
         }
 
-        //clamp gaze position to screen bounds
         float clampedX = Mathf.Clamp(gazePosition.x, 0, Screen.width);
         float clampedY = Mathf.Clamp(gazePosition.y, 0, Screen.height);
-        
-        //convert browser screen coords to Unity canvas coords
         float flippedY = Screen.height - clampedY;
         
         Canvas canvas = rt.GetComponentInParent<Canvas>();

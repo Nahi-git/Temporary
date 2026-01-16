@@ -146,30 +146,38 @@ public class ThumbTypingController : MonoBehaviour
     
     void ShowSurroundingKeys()
     {
-        if (keyboardHighlighter == null || keyboardHighlighter.CurrentlyHighlightedButton == null)
+        if (keyboardHighlighter == null)
         {
             return;
         }
         
-        centerKeyButton = keyboardHighlighter.CurrentlyHighlightedButton;
-        
-        //get surrounding buttons
+        // Use currently highlighted button if available, otherwise find nearest button to gaze
+        if (keyboardHighlighter.CurrentlyHighlightedButton != null)
+        {
+            centerKeyButton = keyboardHighlighter.CurrentlyHighlightedButton;
+        }
+        else
+        {
+            // Fallback: use gaze position to find nearest button (works even when gaze is hidden)
+            centerKeyButton = keyboardHighlighter.GetNearestButtonToGaze();
+            if (centerKeyButton == null)
+            {
+                return;
+            }
+        }
+
         List<Button> surroundingButtons = GetSurroundingButtons(centerKeyButton);
-        
         if (surroundingButtons.Count == 0)
         {
             return;
         }
         
-        //create or activate panel
         if (surroundingKeysPanel == null)
         {
             CreateSurroundingKeysPanel();
         }   
         surroundingKeysPanel.SetActive(true);
         ClearSurroundingKeys();
-        
-        //position panel in bottom right corner of screen
         RectTransform panelRect = surroundingKeysPanel.GetComponent<RectTransform>();
         
         Canvas canvas = keyboardPanel.GetComponentInParent<Canvas>();
@@ -180,8 +188,6 @@ public class ThumbTypingController : MonoBehaviour
             {
                 camera = canvas.worldCamera;
             }
-            
-            //calculate bottom right position with padding
             float padding = 20f;
             Vector2 panelScreenPos = new Vector2(Screen.width - padding, padding);
             
@@ -192,7 +198,6 @@ public class ThumbTypingController : MonoBehaviour
                 camera,
                 out panelLocalPos);
             
-            //set anchor to bottom right and position
             panelRect.anchorMin = new Vector2(1f, 0f);
             panelRect.anchorMax = new Vector2(1f, 0f);
             panelRect.pivot = new Vector2(1f, 0f);
@@ -635,12 +640,10 @@ public class ThumbTypingController : MonoBehaviour
             processedText = ProcessSpecialKey(keyText);
         }
         
-        //type into input field if available
         if (targetInputField != null)
         {
             if (isBackspace)
             {
-                //handle backspace
                 if (targetInputField.text.Length > 0)
                 {
                     targetInputField.text = targetInputField.text.Substring(0, targetInputField.text.Length - 1);
@@ -666,7 +669,6 @@ public class ThumbTypingController : MonoBehaviour
                 {
                     if (isBackspace)
                     {
-                        //handle backspace
                         if (inputField.text.Length > 0)
                         {
                             inputField.text = inputField.text.Substring(0, inputField.text.Length - 1);
@@ -687,10 +689,7 @@ public class ThumbTypingController : MonoBehaviour
     
     string ProcessSpecialKey(string keyText)
     {
-        //normalize the text for comparison
         string normalized = keyText.Trim().ToLower();
-        
-        //handle special keys
         if (normalized == "space" || normalized == "space bar" || normalized == "spacebar" || normalized == " ")
         {
             return " ";
@@ -709,7 +708,6 @@ public class ThumbTypingController : MonoBehaviour
                 {
                     return keyText;
                 }
-                //otherwise return empty (might be a label like "Shift", "Ctrl", etc. that we don't want to type)
                 return "";
         }
     }

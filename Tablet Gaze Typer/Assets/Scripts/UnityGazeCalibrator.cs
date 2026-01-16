@@ -169,12 +169,9 @@ public class UnityGazeCalibrator : MonoBehaviour
 
     IEnumerator CaptureCurrentPoint()
     {
-        //prevent double-capture
         if (!isCalibrating) yield break;
 
         SetInstruction($"Capturing point {index+1}/9 ... keep looking at the dot");
-
-        //wait a moment for user to focus
         yield return new WaitForSeconds(0.2f);
 
         float t = 0f;
@@ -200,13 +197,11 @@ public class UnityGazeCalibrator : MonoBehaviour
         
         if (samples.Count == 0)
         {
-            //if no samples, use current raw gaze (better than nothing)
             avg = gazeClient.rawGaze;
             UnityEngine.Debug.LogWarning($"No valid samples for point {index+1}, using current raw gaze: ({avg.x:F0}, {avg.y:F0})");
         }
         else if (samples.Count < 5)
         {
-            //if very few samples, just use mean (median needs more data)
             Vector2 sum = Vector2.zero;
             foreach (var s in samples) sum += s;
             avg = sum / samples.Count;
@@ -215,8 +210,6 @@ public class UnityGazeCalibrator : MonoBehaviour
         {
             //use median for better robustness to outliers
             avg = CalculateMedian(samples);
-            
-            //if we have enough samples, filter outliers and recalculate
             if (samples.Count > 10)
             {
                 Vector2 filteredAvg = FilterOutliers(samples, avg);
@@ -235,8 +228,6 @@ public class UnityGazeCalibrator : MonoBehaviour
             SolveAffine(measuredPoints, targetPoints);
             calibrated = true;
             isCalibrating = false;
-
-            // init smoothing
             ema = ApplyAffine(gazeClient.rawGaze);
 
             HideDot();
@@ -250,7 +241,7 @@ public class UnityGazeCalibrator : MonoBehaviour
         }
     }
 
-    // --- UI helpers (dot positions in Canvas space) ---
+    //UI helpers (dot positions in Canvas space)
     void ShowDotAt(Vector2 screenPx)
     {
         calibrationDot.gameObject.SetActive(true);
@@ -403,8 +394,6 @@ public class UnityGazeCalibrator : MonoBehaviour
 
         UnityEngine.Debug.Log($"Affine solved:\nX={a:F4}x+{b:F4}y+{c:F2}\nY={d:F4}x+{e:F4}y+{f:F2}");
         UnityEngine.Debug.Log($"Calibration accuracy: Avg error={avgError:F1}px, Max error={maxError:F1}px");
-        
-        //more lenient warning threshold - 200px is acceptable for "roughly accurate"
         if (avgError > 200f)
         {
             UnityEngine.Debug.LogWarning($"Very high calibration error ({avgError:F1}px). Consider recalibrating.");
@@ -427,7 +416,6 @@ public class UnityGazeCalibrator : MonoBehaviour
         double b0, double b1, double b2,
         out double x0, out double x1, out double x2)
     {
-        //augmented matrix
         double[,] m = new double[3, 4] {
             { a00, a01, a02, b0 },
             { a10, a11, a12, b1 },
@@ -436,7 +424,6 @@ public class UnityGazeCalibrator : MonoBehaviour
 
         for (int col = 0; col < 3; col++)
         {
-            // pivot
             int pivot = col;
             double max = System.Math.Abs(m[col, col]);
             for (int r = col + 1; r < 3; r++)
@@ -457,11 +444,9 @@ public class UnityGazeCalibrator : MonoBehaviour
                 }
             }
 
-            // normalize row
             double div = m[col, col];
             for (int k = col; k < 4; k++) m[col, k] /= div;
 
-            // eliminate
             for (int r = 0; r < 3; r++)
             {
                 if (r == col) continue;
@@ -518,7 +503,6 @@ public class UnityGazeCalibrator : MonoBehaviour
         }
         float stdDev = Mathf.Sqrt(sumDistSq / samples.Count);
         
-        //more lenient threshold - keep points within 3 standard deviations (was 2)
         float threshold = stdDev * 3f;
         Vector2 sum = Vector2.zero;
         int count = 0;
@@ -532,7 +516,6 @@ public class UnityGazeCalibrator : MonoBehaviour
             }
         }
         
-        //if we filtered out too many, just use the original center
         if (count < samples.Count * 0.5f)
         {
             return center;

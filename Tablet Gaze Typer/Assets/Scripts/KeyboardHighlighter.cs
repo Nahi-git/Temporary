@@ -17,6 +17,7 @@ public class KeyboardHighlighter : MonoBehaviour
     private Button currentlyHighlightedButton = null;
     private Dictionary<Button, Color> originalColors = new Dictionary<Button, Color>();
     private bool externalHighlightActive = false;
+    private bool highlightingEnabled = true;
     public Button CurrentlyHighlightedButton => currentlyHighlightedButton;
     
     void Start()
@@ -54,8 +55,8 @@ public class KeyboardHighlighter : MonoBehaviour
     
     void Update()
     {
-        //skip automatic highlighting if external highlight is active
-        if (externalHighlightActive)
+        //skip automatic highlighting if highlighting is disabled or external highlight is active
+        if (!highlightingEnabled || externalHighlightActive)
         {
             return;
         }
@@ -101,12 +102,9 @@ public class KeyboardHighlighter : MonoBehaviour
     Button FindNearestButton(Vector2 screenPosition)
     {
         Button nearestButton = null;
-        float nearestDistance = float.MaxValue;
-        
+        float nearestDistance = float.MaxValue;  
         Canvas canvas = keyboardPanel.GetComponentInParent<Canvas>();
         if (canvas == null) return null;
-        
-        // convert gaze screen position to canvas coordinates
         float clampedX = Mathf.Clamp(screenPosition.x, 0, Screen.width);
         float clampedY = Mathf.Clamp(screenPosition.y, 0, Screen.height);
         
@@ -175,29 +173,47 @@ public class KeyboardHighlighter : MonoBehaviour
     public void HighlightButtonExternal(Button button)
     {
         if (button == null) return;
-        
         externalHighlightActive = true;
-        
-        //unhighlight current button if different
         if (currentlyHighlightedButton != null && currentlyHighlightedButton != button)
         {
             UnhighlightButton(currentlyHighlightedButton);
         }
-        
-        //highlight new button
         HighlightButton(button);
         currentlyHighlightedButton = button;
     }
-    
-    //public method to resume automatic highlighting
     public void ResumeAutomaticHighlighting()
     {
         externalHighlightActive = false;
+        if (currentlyHighlightedButton != null)
+        {
+            UnhighlightButton(currentlyHighlightedButton);
+            currentlyHighlightedButton = null;
+        }
     }
-    
     public void RefreshButtonList()
     {
         CollectKeyboardButtons();
+    }
+    
+    public void SetHighlightingEnabled(bool enabled)
+    {
+        highlightingEnabled = enabled;
+        if (!enabled && currentlyHighlightedButton != null && !externalHighlightActive)
+        {
+            UnhighlightButton(currentlyHighlightedButton);
+            currentlyHighlightedButton = null;
+        }
+    }
+    
+    public bool GetHighlightingEnabled()
+    {
+        return highlightingEnabled;
+    }
+
+    public Button GetNearestButtonToGaze()
+    {
+        Vector2 gazePosition = GetGazePosition();
+        return FindNearestButton(gazePosition);
     }
 }
 
