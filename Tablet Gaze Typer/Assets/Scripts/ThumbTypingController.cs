@@ -85,10 +85,6 @@ public class ThumbTypingController : MonoBehaviour
                     isHolding = false;
                 }
             }
-            else if (primaryTouch.press.isPressed && isHolding)
-            {
-                holdStartPosition = touchPosition;
-            }
         }
         else
         {
@@ -117,10 +113,6 @@ public class ThumbTypingController : MonoBehaviour
                         HideSurroundingKeys();
                         isHolding = false;
                     }
-                }
-                else if (mouse.leftButton.isPressed && isHolding)
-                {
-                    holdStartPosition = mouse.position.ReadValue();
                 }
             }
         }
@@ -188,20 +180,16 @@ public class ThumbTypingController : MonoBehaviour
             {
                 camera = canvas.worldCamera;
             }
-            float padding = 20f;
-            Vector2 panelScreenPos = new Vector2(Screen.width - padding, padding);
-            
             Vector2 panelLocalPos;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 canvas.GetComponent<RectTransform>(),
-                panelScreenPos,
+                holdStartPosition,
                 camera,
                 out panelLocalPos);
-            
-            panelRect.anchorMin = new Vector2(1f, 0f);
-            panelRect.anchorMax = new Vector2(1f, 0f);
-            panelRect.pivot = new Vector2(1f, 0f);
-            panelRect.anchoredPosition = new Vector2(-padding, padding);
+            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.anchoredPosition = panelLocalPos;
         }
         CreateSurroundingKeyVisuals(surroundingButtons, centerKeyButton);
     }
@@ -214,12 +202,10 @@ public class ThumbTypingController : MonoBehaviour
         panel.transform.SetParent(canvas.transform, false);
         RectTransform panelRect = panel.AddComponent<RectTransform>();
         panelRect.sizeDelta = new Vector2(300, 200);
-        
-        //anchor to bottom right
-        panelRect.anchorMin = new Vector2(1f, 0f);
-        panelRect.anchorMax = new Vector2(1f, 0f);
-        panelRect.pivot = new Vector2(1f, 0f);
-        panelRect.anchoredPosition = new Vector2(-20f, 20f);     
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.anchoredPosition = Vector2.zero;     
         Image panelImage = panel.AddComponent<Image>();
         panelImage.color = new Color(0, 0, 0, 0.3f);
         
