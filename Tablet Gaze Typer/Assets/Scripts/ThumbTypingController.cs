@@ -83,6 +83,7 @@ public class ThumbTypingController : MonoBehaviour
         }
         
         UnityEngine.Debug.Log($"StoreOriginalKeyboardTexts: Stored {originalButtonTexts.Count} buttons, {letterCount} letters");
+        UpdateKeyboardDisplay();
     }
     
     string GetRawButtonTextDirect(Button button)
