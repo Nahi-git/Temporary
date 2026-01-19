@@ -33,6 +33,8 @@ public class ThumbTypingController : MonoBehaviour
     private Button centerKeyButton = null;
     private Dictionary<GameObject, Button> keyObjectToButtonMap = new Dictionary<GameObject, Button>();
     private Button selectedKey = null;
+    private bool isShiftActive = false;
+    private Dictionary<Button, string> originalButtonTexts = new Dictionary<Button, string>(); 
     
     void Start()
     {
@@ -40,6 +42,62 @@ public class ThumbTypingController : MonoBehaviour
         {
             CreateSurroundingKeysPanel();
         }
+        Invoke(nameof(StoreOriginalKeyboardTexts), 0.1f);
+    }
+
+    public void RefreshStoredKeyboardTexts()
+    {
+        StoreOriginalKeyboardTexts();
+    }
+    
+    public void ResetShift()
+    {
+        if (isShiftActive)
+        {
+            isShiftActive = false;
+            UpdateKeyboardDisplay();
+        }
+    }
+    
+    void StoreOriginalKeyboardTexts()
+    {
+        if (keyboardPanel == null)
+        {
+            UnityEngine.Debug.LogWarning("StoreOriginalKeyboardTexts: keyboardPanel is null");
+            return;
+        }
+        
+        Button[] allButtons = keyboardPanel.GetComponentsInChildren<Button>(true); // Include inactive children
+        originalButtonTexts.Clear();
+        
+        int letterCount = 0;
+        foreach (Button button in allButtons)
+        {
+            string text = GetRawButtonTextDirect(button);
+            if (!string.IsNullOrEmpty(text) && text.Length == 1 && char.IsLetter(text[0]))
+            {
+                text = text.ToLower();
+                letterCount++;
+            }
+            originalButtonTexts[button] = text;
+        }
+        
+        UnityEngine.Debug.Log($"StoreOriginalKeyboardTexts: Stored {originalButtonTexts.Count} buttons, {letterCount} letters");
+    }
+    
+    string GetRawButtonTextDirect(Button button)
+    {
+        TextMeshProUGUI tmpText = button.GetComponentInChildren<TextMeshProUGUI>();
+        if (tmpText != null)
+        {
+            return tmpText.text;
+        }        
+        Text text = button.GetComponentInChildren<Text>();
+        if (text != null)
+        {
+            return text.text;
+        }        
+        return "?";
     }
     
     void Update()
@@ -66,7 +124,6 @@ public class ThumbTypingController : MonoBehaviour
             
             if (primaryTouch.press.wasPressedThisFrame && inBottomRight)
             {
-                //start holding
                 isHolding = true;
                 holdStartTime = Time.time;
                 holdStartPosition = touchPosition;
@@ -75,12 +132,10 @@ public class ThumbTypingController : MonoBehaviour
             {
                 if (isHolding)
                 {
-                    //check if we held long enough
                     if (Time.time - holdStartTime >= holdTimeThreshold)
                     {
                         TypeSelectedKey();
                     }
-                    //clean up
                     HideSurroundingKeys();
                     isHolding = false;
                 }
@@ -230,12 +285,9 @@ public class ThumbTypingController : MonoBehaviour
                 surroundingButtons.Add(btn);
             }
         }
-        
-        //map buttons to 3x3 grid positions based on their relative positions
         Dictionary<Vector2Int, Button> gridMap = new Dictionary<Vector2Int, Button>();
         gridMap[new Vector2Int(0, 0)] = centerButton;
         
-        //calculate average button size for consistent grid sizing
         float avgButtonWidth = centerSize.x;
         float avgButtonHeight = centerSize.y;
         if (surroundingButtons.Count > 0)
@@ -278,8 +330,6 @@ public class ThumbTypingController : MonoBehaviour
                 gridY = -1; //down
             
             Vector2Int gridPos = new Vector2Int(gridX, gridY);
-            
-            //if position is already taken, find nearest empty position
             if (gridMap.ContainsKey(gridPos))
             {
                 //find nearest empty position
@@ -312,8 +362,6 @@ public class ThumbTypingController : MonoBehaviour
         float keySize = 50f;
         float totalSize = gridSize * keySize + (gridSize - 1) * keySpacing;
         float startOffset = -totalSize / 2f + keySize / 2f;
-        
-        //update panel size to fit grid
         RectTransform panelRect = surroundingKeysPanel.GetComponent<RectTransform>();
         panelRect.sizeDelta = new Vector2(totalSize, totalSize);
         
@@ -341,7 +389,6 @@ public class ThumbTypingController : MonoBehaviour
                 RectTransform keyRect = keyObj.AddComponent<RectTransform>();
                 keyRect.sizeDelta = new Vector2(keySize, keySize);
                 
-                //position in grid
                 float x = startOffset + col * (keySize + keySpacing);
                 float y = startOffset + (gridSize - 1 - row) * (keySize + keySpacing);
                 keyRect.anchoredPosition = new Vector2(x, y);
@@ -377,17 +424,39 @@ public class ThumbTypingController : MonoBehaviour
     
     string GetButtonText(Button button)
     {
-        TextMeshProUGUI tmpText = button.GetComponentInChildren<TextMeshProUGUI>();
-        if (tmpText != null)
+        string text = GetRawButtonText(button);
+        return ApplyShiftToText(text);
+    }
+    
+    string GetRawButtonText(Button button)
+    {
+        if (originalButtonTexts.ContainsKey(button))
         {
-            return tmpText.text;
-        }        
-        Text text = button.GetComponentInChildren<Text>();
-        if (text != null)
+            return originalButtonTexts[button];
+        }
+        
+        return GetRawButtonTextDirect(button);
+    }
+    
+    string ApplyShiftToText(string text)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length != 1)
         {
-            return text.text;
-        }        
-        return "?";
+            return text;
+        }
+        if (char.IsLetter(text[0]))
+        {
+            if (isShiftActive)
+            {
+                return text.ToUpper();
+            }
+            else
+            {
+                return text.ToLower();
+            }
+        }
+        
+        return text;
     }
     
     List<Button> GetSurroundingButtons(Button centerButton)
@@ -425,8 +494,7 @@ public class ThumbTypingController : MonoBehaviour
             float distB = Vector2.Distance(centerPos, b.GetComponent<RectTransform>().anchoredPosition);
             return distA.CompareTo(distB);
         });
-        
-        //limit to 8 surrounding keys for 3x3 grid
+
         if (surrounding.Count > 8)
         {
             surrounding = surrounding.GetRange(0, 8);
@@ -461,7 +529,6 @@ public class ThumbTypingController : MonoBehaviour
         //convert thumb position to canvas coordinates
         Canvas canvas = keyboardPanel.GetComponentInParent<Canvas>();
         if (canvas == null) return;
-        
         Camera camera = null;
         if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
         {
@@ -474,8 +541,7 @@ public class ThumbTypingController : MonoBehaviour
             currentPosition,
             camera,
             out thumbCanvasPos);
-        
-        //find which key is closest to thumb position
+
         Button nearestKey = null;
         float nearestDistance = float.MaxValue;
         
@@ -516,8 +582,6 @@ public class ThumbTypingController : MonoBehaviour
         {
             selectedKey = nearestKey;
             UpdateKeyVisuals();
-            
-            //highlight corresponding button on keyboard
             if (keyboardHighlighter != null && selectedKey != null)
             {
                 keyboardHighlighter.HighlightButtonExternal(selectedKey);
@@ -573,6 +637,7 @@ public class ThumbTypingController : MonoBehaviour
         selectedKey = null;
         centerKeyButton = null;
         
+        
         //resume automatic keyboard highlighting
         if (keyboardHighlighter != null)
         {
@@ -587,30 +652,42 @@ public class ThumbTypingController : MonoBehaviour
             return;
         }
         
-        string keyText = GetButtonText(selectedKey);
+        string keyText = GetRawButtonText(selectedKey);
         string buttonName = selectedKey.gameObject.name;
         
+        UnityEngine.Debug.Log($"TypeSelectedKey called: button='{buttonName}', text='{keyText}'"); 
+        string normalized = keyText.Trim().ToLower();
+        bool isShift = buttonName.ToLower().Contains("shift") || normalized == "shift" || normalized == "⇧";   
+        if (isShift)
+        {
+            isShiftActive = !isShiftActive;
+            UnityEngine.Debug.Log($"Shift button pressed! Toggling shift to: {isShiftActive}");
+            RefreshSurroundingKeysDisplay();
+            return;
+        }
+
+        string displayText = ApplyShiftToText(keyText);
         bool isSpace = buttonName == "Key_Space";
         bool isBackspace = buttonName == "Key_Backspace";
         
         //if it's space or backspace, handle directly
         if (isSpace)
         {
-            keyText = " ";
+            displayText = " ";
         }
         else if (isBackspace)
         {
-            keyText = "";
+            displayText = "";
         }
-        else if (string.IsNullOrEmpty(keyText))
+        else if (string.IsNullOrEmpty(displayText))
         {
             return;
         }
         
         //process special keys for other buttons
-        string normalized = keyText.Trim().ToLower();
-        bool isBackspaceByText = normalized == "backspace" || normalized == "←" || normalized == "delete";
-        bool isSpaceByText = normalized == "space" || normalized == "space bar" || normalized == "spacebar";
+        string normalizedLower = displayText.Trim().ToLower();
+        bool isBackspaceByText = normalizedLower == "backspace" || normalizedLower == "←" || normalizedLower == "delete";
+        bool isSpaceByText = normalizedLower == "space" || normalizedLower == "space bar" || normalizedLower == "spacebar";
         
         string processedText;
         if (isBackspace || isBackspaceByText)
@@ -623,7 +700,17 @@ public class ThumbTypingController : MonoBehaviour
         }
         else
         {
-            processedText = ProcessSpecialKey(keyText);
+            processedText = ProcessSpecialKey(displayText);
+        }      
+        //auto-disable shift after typing a letter
+        bool isLetter = !string.IsNullOrEmpty(processedText) && 
+                       processedText.Length == 1 && 
+                       char.IsLetter(processedText[0]);
+        if (isLetter && isShiftActive)
+        {
+            UnityEngine.Debug.Log($"Auto-disabling shift after typing letter: '{processedText}'");
+            isShiftActive = false;
+            RefreshSurroundingKeysDisplay(); 
         }
         
         if (targetInputField != null)
@@ -641,7 +728,7 @@ public class ThumbTypingController : MonoBehaviour
             {
                 targetInputField.text += processedText;
                 targetInputField.caretPosition = targetInputField.text.Length;
-                UnityEngine.Debug.Log($"Typed: {keyText} -> '{processedText}'");
+                UnityEngine.Debug.Log($"Typed: {displayText} -> '{processedText}'");
             }
         }
         else
@@ -666,11 +753,78 @@ public class ThumbTypingController : MonoBehaviour
                     {
                         inputField.text += processedText;
                         inputField.caretPosition = inputField.text.Length;
-                        UnityEngine.Debug.Log($"Typed: {keyText} -> '{processedText}'");
+                        UnityEngine.Debug.Log($"Typed: {displayText} -> '{processedText}'");
                     }
                 }
             }
         }
+    }
+    
+    void RefreshSurroundingKeysDisplay()
+    {
+        foreach (GameObject keyObj in surroundingKeyObjects)
+        {
+            Button button = keyObjectToButtonMap[keyObj];
+            TextMeshProUGUI textComponent = keyObj.GetComponentInChildren<TextMeshProUGUI>();
+            if (textComponent != null)
+            {
+                textComponent.text = GetButtonText(button);
+            }
+        }
+        UpdateKeyboardDisplay();
+    }
+    //after pressing keys change the keyboard (like shift), update the panel visually
+    void UpdateKeyboardDisplay()
+    {
+        if (keyboardPanel == null)
+        {
+            UnityEngine.Debug.LogWarning("UpdateKeyboardDisplay: keyboardPanel is null");
+            return;
+        }
+        
+        Button[] allButtons = keyboardPanel.GetComponentsInChildren<Button>(true); 
+        
+        int updatedCount = 0;
+        int totalLetters = 0;
+        foreach (Button button in allButtons)
+        {
+            if (!originalButtonTexts.ContainsKey(button)) continue;
+            
+            string originalText = originalButtonTexts[button];
+            string displayText = ApplyShiftToText(originalText);
+            if (originalText != displayText)
+            {
+                totalLetters++;
+            }
+            TextMeshProUGUI tmpText = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (tmpText != null)
+            {
+                if (tmpText.text != displayText)
+                {
+                    tmpText.text = displayText;
+                    tmpText.SetAllDirty(); 
+                    updatedCount++;
+                }
+                continue;
+            }
+
+            Text text = button.GetComponentInChildren<Text>(true);
+            if (text != null)
+            {
+                if (text.text != displayText)
+                {
+                    text.text = displayText;
+                    updatedCount++;
+                }
+            }
+        }
+        Canvas canvas = keyboardPanel.GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            Canvas.ForceUpdateCanvases();
+        }
+        
+        UnityEngine.Debug.Log($"UpdateKeyboardDisplay: Updated {updatedCount}/{totalLetters} keys. Shift active: {isShiftActive}. Panel active: {keyboardPanel.activeSelf}");
     }
     
     string ProcessSpecialKey(string keyText)
