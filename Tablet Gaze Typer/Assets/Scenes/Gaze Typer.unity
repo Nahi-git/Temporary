@@ -5928,7 +5928,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ThumbTypingController
   keyboardHighlighter: {fileID: 527380462}
   keyboardPanel: {fileID: 112173700}
-  bottomRightCornerSize: 0.5
+  bottomRightCornerSize: 1
   holdTimeThreshold: 0.1
   surroundingKeysPanelPrefab: {fileID: 0}
   surroundingKeyColor: {r: 0.5, g: 0.8, b: 1, a: 0.8}

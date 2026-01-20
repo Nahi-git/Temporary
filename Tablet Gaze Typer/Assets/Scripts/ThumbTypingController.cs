@@ -360,7 +360,7 @@ public class ThumbTypingController : MonoBehaviour
         
         //create 3x3 grid layout
         int gridSize = 3;
-        float keySize = 50f;
+        float keySize = 80f;
         float totalSize = gridSize * keySize + (gridSize - 1) * keySpacing;
         float startOffset = -totalSize / 2f + keySize / 2f;
         RectTransform panelRect = surroundingKeysPanel.GetComponent<RectTransform>();
