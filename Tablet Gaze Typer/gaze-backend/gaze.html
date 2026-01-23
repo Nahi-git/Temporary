@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/webgazer@latest/dist/webgazer.js"></script>
 </head>
 <body style="margin:0;background:black">
 
@@ -12,8 +12,20 @@ let latest = null;
 
 webgazer
   .setRegression("ridge")
-  .setGazeListener(d => { if (d) latest = { x:d.x, y:d.y }; })
-  .begin();
+  .setGazeListener(function(data) {
+    if (data && data.x !== null && data.y !== null) {
+      latest = { x: data.x, y: data.y };
+      console.log('Gaze data:', latest); //debug log
+    }
+  })
+  .begin()
+  .then(function() {
+    console.log('WebGazer initialized');
+    webgazer.showFaceFeedbackBox(true);
+  })
+  .catch(function(err) {
+    console.error('WebGazer error:', err);
+  });
 
 //send window size once when connected
 socket.onopen = () => {
@@ -22,6 +34,7 @@ socket.onopen = () => {
     width: window.innerWidth, 
     height: window.innerHeight 
   }));
+  console.log('WebSocket connected');
 };
 
 setInterval(() => {
@@ -30,10 +43,10 @@ setInterval(() => {
   }
 }, 33);
 
-document.body.onclick = e =>
+document.body.onclick = e => {
   webgazer.recordScreenPosition(e.clientX, e.clientY, "click");
-
-webgazer.showFaceFeedbackBox(true);
+  console.log('Calibration point recorded:', e.clientX, e.clientY);
+};
 </script>
 
 </body>
