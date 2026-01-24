@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <script src="https://cdn.jsdelivr.net/npm/webgazer@latest/dist/webgazer.js"></script>
 </head>
 <body style="margin:0;background:black">
@@ -9,8 +10,218 @@
 <script>
 const socket = new WebSocket("ws://localhost:8765");
 let latest = null;
+let isCalibrating = false;
+let calibrateBtn = null;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function randBetween(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+async function waitForWebgazerPrediction(timeoutMs = 10000) {
+  const tEnd = performance.now() + timeoutMs;
+  while (performance.now() < tEnd) {
+    try {
+      const p = await webgazer.getCurrentPrediction();
+      if (p && p.x !== null && p.y !== null) return true;
+    } catch (_) {}
+    await sleep(100);
+  }
+  return false;
+}
+
+function createCalibratorUI() {
+  const overlay = document.createElement("div");
+  overlay.id = "wg-calibration-overlay";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.25)";
+  overlay.style.zIndex = "999998";
+  overlay.style.pointerEvents = "none"; 
+
+  const dot = document.createElement("div");
+  dot.id = "wg-calibration-dot";
+  dot.style.position = "absolute";
+  dot.style.width = "28px";
+  dot.style.height = "28px";
+  dot.style.borderRadius = "9999px";
+  dot.style.background = "white";
+  dot.style.boxShadow = "0 0 0 6px rgba(255,255,255,0.25)";
+  dot.style.transform = "translate(-50%, -50%)";
+
+  const label = document.createElement("div");
+  label.id = "wg-calibration-label";
+  label.style.position = "absolute";
+  label.style.left = "50%";
+  label.style.top = "18px";
+  label.style.transform = "translateX(-50%)";
+  label.style.fontFamily = "system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif";
+  label.style.fontSize = "16px";
+  label.style.color = "white";
+  label.style.textAlign = "center";
+  label.style.padding = "10px 12px";
+  label.style.background = "rgba(0,0,0,0.55)";
+  label.style.borderRadius = "10px";
+  label.textContent = "Calibration: follow the dot with your eyes";
+
+  overlay.appendChild(dot);
+  overlay.appendChild(label);
+  document.body.appendChild(overlay);
+
+  return { overlay, dot, label };
+}
+
+function createCalibrationButton() {
+  const btn = document.createElement("button");
+  btn.id = "wg-start-calibration";
+  btn.type = "button";
+  btn.textContent = "Calibrate";
+  btn.style.position = "fixed";
+  btn.style.right = "16px";
+  btn.style.bottom = "16px";
+  btn.style.zIndex = "999999";
+  btn.style.padding = "14px 18px";
+  btn.style.borderRadius = "14px";
+  btn.style.border = "1px solid rgba(255,255,255,0.35)";
+  btn.style.background = "rgba(0,0,0,0.65)";
+  btn.style.color = "white";
+  btn.style.fontFamily = "system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif";
+  btn.style.fontSize = "16px";
+  btn.style.fontWeight = "600";
+  btn.style.backdropFilter = "blur(6px)";
+  btn.style.webkitBackdropFilter = "blur(6px)";
+  btn.style.touchAction = "manipulation";
+
+  const setBusy = (busy) => {
+    btn.disabled = busy;
+    btn.style.opacity = busy ? "0.6" : "1";
+    btn.textContent = busy ? "Calibrating…" : "Calibrate";
+  };
+
+  btn.addEventListener("pointerdown", async (e) => {
+    e.preventDefault();
+    if (isCalibrating) return;
+    isCalibrating = true;
+    setBusy(true);
+    btn.style.display = "none"; 
+    try {
+      await autoCalibrateWebGazer();
+    } finally {
+      btn.style.display = "";
+      setBusy(false);
+      isCalibrating = false;
+    }
+  }, { passive: false });
+
+  document.body.appendChild(btn);
+  return btn;
+}
+
+function getCalibrationPoints() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const margin = Math.max(40, Math.min(w, h) * 0.08);
+
+  //outer and inner grid points for calibration
+  const xs = [margin, w / 2, w - margin];
+  const ys = [margin, h / 2, h - margin];
+  const spanX = (w - margin) - margin;
+  const spanY = (h - margin) - margin;
+  const innerHalfSpanX = spanX / 4; 
+  const innerHalfSpanY = spanY / 4;
+  const cx = w / 2;
+  const cy = h / 2;
+
+  const innerXs = [
+    Math.max(margin, cx - innerHalfSpanX),
+    cx,
+    Math.min(w - margin, cx + innerHalfSpanX),
+  ];
+  const innerYs = [
+    Math.max(margin, cy - innerHalfSpanY),
+    cy,
+    Math.min(h - margin, cy + innerHalfSpanY),
+  ];
+
+  const pts = [
+    { x: xs[0], y: ys[0] },
+    { x: xs[1], y: ys[0] },
+    { x: xs[2], y: ys[0] },
+    { x: xs[0], y: ys[1] },
+    { x: xs[1], y: ys[1] },
+    { x: xs[2], y: ys[1] },
+    { x: xs[0], y: ys[2] },
+    { x: xs[1], y: ys[2] },
+    { x: xs[2], y: ys[2] },
+    { x: innerXs[0], y: innerYs[0] },
+    { x: innerXs[1], y: innerYs[0] },
+    { x: innerXs[2], y: innerYs[0] },
+    { x: innerXs[0], y: innerYs[1] },
+    { x: innerXs[2], y: innerYs[1] },
+    { x: innerXs[0], y: innerYs[2] },
+    { x: innerXs[1], y: innerYs[2] },
+    { x: innerXs[2], y: innerYs[2] },
+  ];
+  return pts;
+}
+
+async function autoCalibrateWebGazer() {
+  const { overlay, dot, label } = createCalibratorUI();
+
+  //clear previous data cached
+  try {
+    if (typeof webgazer.clearData === "function") webgazer.clearData();
+  } catch (_) {}
+  label.textContent = "Calibration: initializing camera/tracker…";
+  const ready = await waitForWebgazerPrediction(12000);
+  if (!ready) {
+    label.textContent = "Calibration skipped: no camera prediction";
+    await sleep(900);
+    overlay.remove();
+    return;
+  }
+
+  const points = getCalibrationPoints();
+
+  //changeable parameters for calibration
+  const settleMs = 650; //time/ms to focus on dot
+  const sampleMs = 1600; //time/ms to sample at dot
+  const center = points.find(p => Math.abs(p.x - window.innerWidth / 2) < 1 && Math.abs(p.y - window.innerHeight / 2) < 1) || points[4];
+  const rest = points.filter(p => p !== center);
+  const ordered = [center, ...rest];
+  const passes = 1;
+  const jitterPx = 0;
+
+  for (let pass = 0; pass < passes; pass++) {
+    for (let i = 0; i < ordered.length; i++) {
+      const p = ordered[i];
+    dot.style.left = `${p.x}px`;
+    dot.style.top = `${p.y}px`;
+      label.textContent = `Calibration: look at the dot (${pass + 1}/${passes}, ${i + 1}/${ordered.length})`;
+    await sleep(settleMs);
+      await sleep(sampleMs / 2);
+      try {
+        const x = p.x + randBetween(-jitterPx, jitterPx);
+        const y = p.y + randBetween(-jitterPx, jitterPx);
+        webgazer.recordScreenPosition(x, y, "click");
+      } catch (e) {
+        console.warn("recordScreenPosition failed:", e);
+      }
+      await sleep(sampleMs / 2);
+  }
+  }
+
+  label.textContent = "Calibration complete";
+  await sleep(450);
+  overlay.remove();
+}
 
 webgazer
+  .saveDataAcrossSessions(false)
+  .showPredictionPoints(true)
   .setRegression("ridge")
   .setGazeListener(function(data) {
     if (data && data.x !== null && data.y !== null) {
@@ -22,6 +233,7 @@ webgazer
   .then(function() {
     console.log('WebGazer initialized');
     webgazer.showFaceFeedbackBox(true);
+    calibrateBtn = createCalibrationButton();
   })
   .catch(function(err) {
     console.error('WebGazer error:', err);
@@ -43,10 +255,6 @@ setInterval(() => {
   }
 }, 33);
 
-document.body.onclick = e => {
-  webgazer.recordScreenPosition(e.clientX, e.clientY, "click");
-  console.log('Calibration point recorded:', e.clientX, e.clientY);
-};
 </script>
 
 </body>
