@@ -35,6 +35,18 @@ public class ThumbTypingController : MonoBehaviour
     private Button selectedKey = null;
     private bool isShiftActive = false;
     private Dictionary<Button, string> originalButtonTexts = new Dictionary<Button, string>(); 
+
+    [Header("Thumb Popup Layout")]
+    [Tooltip("If enabled, the surrounding-key popup uses a hard-coded QWERTY neighbor layout based on button GameObject names (e.g. Key_A, Key_Shift, Key_Space).")]
+    public bool useHardcodedQwertyPopupLayout = true;
+    private readonly Dictionary<string, Button> buttonByName = new Dictionary<string, Button>();
+    private static readonly string[][] QwertyRows = new string[][]
+    {
+        new [] { "Key_Q", "Key_W", "Key_E", "Key_R", "Key_T", "Key_Y", "Key_U", "Key_I", "Key_O", "Key_P", "Key_Backspace" },
+        new [] { "Key_A", "Key_S", "Key_D", "Key_F", "Key_G", "Key_H", "Key_J", "Key_K", "Key_L", "Key_Enter" },
+        new [] { "Key_Shift", "Key_Z", "Key_X", "Key_C", "Key_V", "Key_B", "Key_N", "Key_M", "Key_Comma", "Key_Fullstop" },
+        new [] { "Key_Punctuation", "Key_Space" },
+    };
     
     void Start()
     {
@@ -42,6 +54,7 @@ public class ThumbTypingController : MonoBehaviour
         {
             CreateSurroundingKeysPanel();
         }
+        BuildButtonLookup();
         Invoke(nameof(StoreOriginalKeyboardTexts), 0.1f);
     }
 
@@ -67,8 +80,9 @@ public class ThumbTypingController : MonoBehaviour
             return;
         }
         
-        Button[] allButtons = keyboardPanel.GetComponentsInChildren<Button>(true); // Include inactive children
+        Button[] allButtons = keyboardPanel.GetComponentsInChildren<Button>(true); 
         originalButtonTexts.Clear();
+        BuildButtonLookup(allButtons);
         
         int letterCount = 0;
         foreach (Button button in allButtons)
@@ -84,6 +98,142 @@ public class ThumbTypingController : MonoBehaviour
         
         UnityEngine.Debug.Log($"StoreOriginalKeyboardTexts: Stored {originalButtonTexts.Count} buttons, {letterCount} letters");
         UpdateKeyboardDisplay();
+    }
+
+    void BuildButtonLookup()
+    {
+        if (keyboardPanel == null)
+        {
+            return;
+        }
+        BuildButtonLookup(keyboardPanel.GetComponentsInChildren<Button>(true));
+    }
+
+    void BuildButtonLookup(Button[] allButtons)
+    {
+        buttonByName.Clear();
+        if (allButtons == null) return;
+        foreach (Button b in allButtons)
+        {
+            if (b == null) continue;
+            string n = b.gameObject != null ? b.gameObject.name : null;
+            if (string.IsNullOrEmpty(n)) continue;
+            if (!buttonByName.ContainsKey(n))
+            {
+                buttonByName.Add(n, b);
+            }
+        }
+    }
+    //used to get the row and column of a button in the hardcoded QWERTY layout
+    bool TryGetQwertyPosition(string keyName, out int rowIndex, out int colIndex)
+    {
+        rowIndex = -1;
+        colIndex = -1;
+        if (string.IsNullOrEmpty(keyName)) return false;
+
+        for (int r = 0; r < QwertyRows.Length; r++)
+        {
+            string[] row = QwertyRows[r];
+            for (int c = 0; c < row.Length; c++)
+            {
+                if (row[c] == keyName)
+                {
+                    rowIndex = r;
+                    colIndex = c;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    Button GetButtonByName(string keyName)
+    {
+        if (string.IsNullOrEmpty(keyName)) return null;
+        return buttonByName.TryGetValue(keyName, out Button b) ? b : null;
+    }
+
+    Button GetButtonAt(int rowIndex, int colIndex)
+    {
+        if (rowIndex < 0 || rowIndex >= QwertyRows.Length) return null;
+        string[] row = QwertyRows[rowIndex];
+        if (colIndex < 0 || colIndex >= row.Length) return null;
+        return GetButtonByName(row[colIndex]);
+    }
+
+    //for keys on the bottom left of the keyboard, they should show punctuation and space on the bottom grid
+    bool ShouldShowPunctuationAndSpace(string centerKeyName)
+    {
+        return centerKeyName == "Key_Shift" || centerKeyName == "Key_Z" || centerKeyName == "Key_X";
+    }
+    //switch to hardcoded grid map for thumb typing
+    bool TryBuildHardcodedGridMap(Button centerButton, out Dictionary<Vector2Int, Button> gridMap, out bool wideSpaceBottom, out bool punctPlusSpaceBottom)
+    {
+        gridMap = null;
+        wideSpaceBottom = false;
+        punctPlusSpaceBottom = false;
+        if (!useHardcodedQwertyPopupLayout) return false;
+        if (centerButton == null || centerButton.gameObject == null) return false;
+        if (keyboardPanel == null) return false;
+        if (buttonByName.Count == 0) BuildButtonLookup();
+
+        string centerName = centerButton.gameObject.name;
+        if (!TryGetQwertyPosition(centerName, out int r, out int c))
+        {
+            return false;
+        }
+        if (r >= 3)
+        {
+            return false;
+        }
+
+        gridMap = new Dictionary<Vector2Int, Button>();
+        gridMap[new Vector2Int(0, 0)] = centerButton;
+        int topRow = r - 1;
+        if (topRow >= 0)
+        {
+            Button tl = GetButtonAt(topRow, c - 1);
+            Button tc = GetButtonAt(topRow, c);
+            Button tr = GetButtonAt(topRow, c + 1);
+            if (tl != null) gridMap[new Vector2Int(-1, 1)] = tl;
+            if (tc != null) gridMap[new Vector2Int(0, 1)] = tc;
+            if (tr != null) gridMap[new Vector2Int(1, 1)] = tr;
+        }
+        Button ml = GetButtonAt(r, c - 1);
+        Button mr = GetButtonAt(r, c + 1);
+        if (ml != null) gridMap[new Vector2Int(-1, 0)] = ml;
+        if (mr != null) gridMap[new Vector2Int(1, 0)] = mr;
+
+        if (r <= 1)
+        {
+            int bottomRow = r + 1;
+            Button bl = GetButtonAt(bottomRow, c - 1);
+            Button bc = GetButtonAt(bottomRow, c);
+            Button br = GetButtonAt(bottomRow, c + 1);
+            if (bl != null) gridMap[new Vector2Int(-1, -1)] = bl;
+            if (bc != null) gridMap[new Vector2Int(0, -1)] = bc;
+            if (br != null) gridMap[new Vector2Int(1, -1)] = br;
+        }
+        else
+        {
+            punctPlusSpaceBottom = ShouldShowPunctuationAndSpace(centerName);
+            if (punctPlusSpaceBottom)
+            {
+                Button punct = GetButtonByName("Key_Punctuation");
+                Button space = GetButtonByName("Key_Space");
+                if (punct != null) gridMap[new Vector2Int(-1, -1)] = punct;
+                if (space != null) gridMap[new Vector2Int(0, -1)] = space;
+            }
+            else
+            {
+                Button space = GetButtonByName("Key_Space");
+                if (space != null) gridMap[new Vector2Int(0, -1)] = space;
+                wideSpaceBottom = true;
+            }
+        }
+
+        return true;
     }
     
     string GetRawButtonTextDirect(Button button)
@@ -198,24 +348,24 @@ public class ThumbTypingController : MonoBehaviour
         {
             return;
         }
-        
-        // Use currently highlighted button if available, otherwise find nearest button to gaze
         if (keyboardHighlighter.CurrentlyHighlightedButton != null)
         {
             centerKeyButton = keyboardHighlighter.CurrentlyHighlightedButton;
         }
         else
         {
-            // Fallback: use gaze position to find nearest button (works even when gaze is hidden)
             centerKeyButton = keyboardHighlighter.GetNearestButtonToGaze();
             if (centerKeyButton == null)
             {
                 return;
             }
         }
-
-        List<Button> surroundingButtons = GetSurroundingButtons(centerKeyButton);
-        if (surroundingButtons.Count == 0)
+        //builds grid layout for thumb typing
+        Dictionary<Vector2Int, Button> gridMap;
+        bool wideSpaceBottom;
+        bool punctPlusSpaceBottom;
+        if (!TryBuildHardcodedGridMap(centerKeyButton, out gridMap, out wideSpaceBottom, out punctPlusSpaceBottom) ||
+            gridMap == null || gridMap.Count == 0)
         {
             return;
         }
@@ -247,7 +397,7 @@ public class ThumbTypingController : MonoBehaviour
             panelRect.pivot = new Vector2(0.5f, 0.5f);
             panelRect.anchoredPosition = panelLocalPos;
         }
-        CreateSurroundingKeyVisuals(surroundingButtons, centerKeyButton);
+        CreateSurroundingKeyVisuals(gridMap, centerKeyButton, wideSpaceBottom, punctPlusSpaceBottom);
     }
     
     void CreateSurroundingKeysPanel()
@@ -268,95 +418,10 @@ public class ThumbTypingController : MonoBehaviour
         surroundingKeysPanel = panel;
     }
     
-    void CreateSurroundingKeyVisuals(List<Button> buttons, Button centerButton)
+    void CreateSurroundingKeyVisuals(Dictionary<Vector2Int, Button> gridMap, Button centerButton, bool wideSpaceBottom, bool punctPlusSpaceBottom)
     {
-        if (surroundingKeysPanel == null || buttons.Count == 0) return;
-        
-        //get center button position on keyboard
-        RectTransform centerRect = centerButton.GetComponent<RectTransform>();
-        Vector2 centerPos = centerRect.anchoredPosition;
-        Vector2 centerSize = centerRect.rect.size;
-        
-        //separate center from surrounding buttons
-        List<Button> surroundingButtons = new List<Button>();
-        foreach (Button btn in buttons)
-        {
-            if (btn != centerButton)
-            {
-                surroundingButtons.Add(btn);
-            }
-        }
-        Dictionary<Vector2Int, Button> gridMap = new Dictionary<Vector2Int, Button>();
-        gridMap[new Vector2Int(0, 0)] = centerButton;
-        
-        float avgButtonWidth = centerSize.x;
-        float avgButtonHeight = centerSize.y;
-        if (surroundingButtons.Count > 0)
-        {
-            float totalWidth = centerSize.x;
-            float totalHeight = centerSize.y;
-            foreach (Button btn in surroundingButtons)
-            {
-                RectTransform btnRect = btn.GetComponent<RectTransform>();
-                if (btnRect != null)
-                {
-                    totalWidth += btnRect.rect.width;
-                    totalHeight += btnRect.rect.height;
-                }
-            }
-            avgButtonWidth = totalWidth / (surroundingButtons.Count + 1);
-            avgButtonHeight = totalHeight / (surroundingButtons.Count + 1);
-        }
-        
-        //assign surrounding buttons to grid positions based on relative position
-        foreach (Button button in surroundingButtons)
-        {
-            RectTransform buttonRect = button.GetComponent<RectTransform>();
-            if (buttonRect == null) continue;
-            
-            Vector2 buttonPos = buttonRect.anchoredPosition;
-            Vector2 relativePos = buttonPos - centerPos;
-            
-            int gridX = 0;
-            int gridY = 0;
-            
-            if (relativePos.x < -avgButtonWidth * 0.5f)
-                gridX = -1; //left
-            else if (relativePos.x > avgButtonWidth * 0.5f)
-                gridX = 1; //right
-            
-            if (relativePos.y > avgButtonHeight * 0.5f)
-                gridY = 1; //up (Y increases upward in Unity UI)
-            else if (relativePos.y < -avgButtonHeight * 0.5f)
-                gridY = -1; //down
-            
-            Vector2Int gridPos = new Vector2Int(gridX, gridY);
-            if (gridMap.ContainsKey(gridPos))
-            {
-                //find nearest empty position
-                float minDist = float.MaxValue;
-                Vector2Int bestPos = gridPos;
-                for (int y = -1; y <= 1; y++)
-                {
-                    for (int x = -1; x <= 1; x++)
-                    {
-                        Vector2Int pos = new Vector2Int(x, y);
-                        if (!gridMap.ContainsKey(pos))
-                        {
-                            float dist = Vector2.Distance(new Vector2(x, y), new Vector2(gridX, gridY));
-                            if (dist < minDist)
-                            {
-                                minDist = dist;
-                                bestPos = pos;
-                            }
-                        }
-                    }
-                }
-                gridPos = bestPos;
-            }
-            
-            gridMap[gridPos] = button;
-        }
+        if (surroundingKeysPanel == null || gridMap == null || centerButton == null) return;
+        bool usingHardcoded = true;
         
         //create 3x3 grid layout
         int gridSize = 3;
@@ -386,13 +451,28 @@ public class ThumbTypingController : MonoBehaviour
                 //create visual key object
                 GameObject keyObj = new GameObject($"SurroundingKey_{row}_{col}");
                 keyObj.transform.SetParent(surroundingKeysPanel.transform, false);
-                
                 RectTransform keyRect = keyObj.AddComponent<RectTransform>();
                 keyRect.sizeDelta = new Vector2(keySize, keySize);
-                
                 float x = startOffset + col * (keySize + keySpacing);
                 float y = startOffset + (gridSize - 1 - row) * (keySize + keySpacing);
                 keyRect.anchoredPosition = new Vector2(x, y);
+                //for space key on the bottom row, it should be larger than the other keys
+                if (usingHardcoded && button != null && button.gameObject != null && button.gameObject.name == "Key_Space" && gridY == -1)
+                {
+                    if (wideSpaceBottom)
+                    {
+                        keyRect.sizeDelta = new Vector2(totalSize, keySize);
+                        keyRect.anchoredPosition = new Vector2(0f, y);
+                    }
+                    else if (punctPlusSpaceBottom)
+                    {
+                        float spanWidth = keySize * 2f + keySpacing;
+                        float xCenter = startOffset + 1 * (keySize + keySpacing);
+                        float xRight = startOffset + 2 * (keySize + keySpacing);
+                        keyRect.sizeDelta = new Vector2(spanWidth, keySize);
+                        keyRect.anchoredPosition = new Vector2((xCenter + xRight) * 0.5f, y);
+                    }
+                }
                 
                 Image keyImage = keyObj.AddComponent<Image>();
                 keyImage.color = (button == centerButton) ? selectedKeyColor : surroundingKeyColor;
@@ -458,50 +538,6 @@ public class ThumbTypingController : MonoBehaviour
         }
         
         return text;
-    }
-    
-    List<Button> GetSurroundingButtons(Button centerButton)
-    {
-        List<Button> surrounding = new List<Button>();
-        
-        if (centerButton == null || keyboardHighlighter == null) return surrounding;
-        
-        RectTransform centerRect = centerButton.GetComponent<RectTransform>();
-        if (centerRect == null) return surrounding;
-
-        Vector2 centerPos = centerRect.anchoredPosition;
-        float searchRadius = Mathf.Max(centerRect.rect.width, centerRect.rect.height) * 2.5f;
-        Button[] allButtons = keyboardPanel.GetComponentsInChildren<Button>();    
-        foreach (Button button in allButtons)
-        {
-            if (button == centerButton) continue;
-            
-            RectTransform buttonRect = button.GetComponent<RectTransform>();
-            if (buttonRect == null) continue;
-            
-            Vector2 buttonPos = buttonRect.anchoredPosition;
-            float distance = Vector2.Distance(centerPos, buttonPos);
-            
-            if (distance <= searchRadius)
-            {
-                surrounding.Add(button);
-            }
-        }
-        
-        //sort by distance and take closest 8 (3x3 grid minus center)
-        surrounding.Sort((a, b) =>
-        {
-            float distA = Vector2.Distance(centerPos, a.GetComponent<RectTransform>().anchoredPosition);
-            float distB = Vector2.Distance(centerPos, b.GetComponent<RectTransform>().anchoredPosition);
-            return distA.CompareTo(distB);
-        });
-
-        if (surrounding.Count > 8)
-        {
-            surrounding = surrounding.GetRange(0, 8);
-        }
-        surrounding.Add(centerButton);
-        return surrounding;
     }
     
     void UpdateThumbSelection()
