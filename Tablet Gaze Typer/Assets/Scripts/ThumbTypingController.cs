@@ -10,6 +10,10 @@ public class ThumbTypingController : MonoBehaviour
     [Header("References")]
     public KeyboardHighlighter keyboardHighlighter;
     public GameObject keyboardPanel;
+
+    [Header("Debug")]
+    [Tooltip("If enabled, logs gaze coordinates (raw + calibrated) whenever a key is typed.")]
+    public bool logGazeOnKeyPress = true;
     
     [Header("Touch Detection")]
     [Range(0f, 1f)]
@@ -691,6 +695,11 @@ public class ThumbTypingController : MonoBehaviour
         
         string keyText = GetRawButtonText(selectedKey);
         string buttonName = selectedKey.gameObject.name;
+
+        if (logGazeOnKeyPress)
+        {
+            LogGazeForKeyPress(selectedKey, keyText);
+        }
         
         UnityEngine.Debug.Log($"TypeSelectedKey called: button='{buttonName}', text='{keyText}'"); 
         string normalized = keyText.Trim().ToLower();
@@ -795,6 +804,22 @@ public class ThumbTypingController : MonoBehaviour
                 }
             }
         }
+    }
+
+    void LogGazeForKeyPress(Button button, string rawKeyText)
+    {
+        Vector2 gaze = Vector2.zero;
+
+        if (keyboardHighlighter != null && keyboardHighlighter.calibrator != null)
+        {
+            gaze = keyboardHighlighter.calibrator.GetCalibratedGazeOrRaw();
+        }
+        else if (keyboardHighlighter != null && keyboardHighlighter.gazeSource != null)
+        {
+            gaze = keyboardHighlighter.gazeSource.rawGaze;
+        }
+
+        UnityEngine.Debug.Log($"{gaze.x:F0}, {gaze.y:F0}");
     }
     
     void RefreshSurroundingKeysDisplay()
