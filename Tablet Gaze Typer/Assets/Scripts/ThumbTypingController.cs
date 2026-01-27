@@ -805,7 +805,7 @@ public class ThumbTypingController : MonoBehaviour
             }
         }
     }
-
+    //for testing gaze accuracy
     void LogGazeForKeyPress(Button button, string rawKeyText)
     {
         Vector2 gaze = Vector2.zero;

@@ -79,7 +79,6 @@ public class AppBootstrap : MonoBehaviour
                 $"--app=http://localhost:8081/gaze.html " +
                 $"--window-size={screenWidth},{screenHeight} " +
                 "--start-maximized " +
-                "--use-fake-ui-for-media-stream " +
                 "--disable-background-timer-throttling " +
                 "--disable-backgrounding-occluded-windows",
             UseShellExecute = true
