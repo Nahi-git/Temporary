@@ -119,6 +119,13 @@ public class UnityGazeCalibrator : MonoBehaviour
         targetPoints.Clear();
         Build9PointLayout();
 
+        if (gazeClient != null && gazeClient.browserWindowSize.x > 0 && gazeClient.browserWindowSize.y > 0)
+        {
+            if (layoutWidth != gazeClient.browserWindowSize.x || layoutHeight != gazeClient.browserWindowSize.y)
+            {
+                UnityEngine.Debug.LogWarning($"Layout size mismatch: layout={layoutWidth}x{layoutHeight}, browser={gazeClient.browserWindowSize.x}x{gazeClient.browserWindowSize.y}");
+            }
+        }
         HideKeyboard();  
         ShowDotAt(layout[index]);
         SetInstruction("Look at the dot and press SPACE to capture (repeat for each point).");
@@ -126,6 +133,7 @@ public class UnityGazeCalibrator : MonoBehaviour
 
     // --- layout storage ---
     Vector2[] layout;
+    float layoutWidth, layoutHeight;
 
     void Build9PointLayout()
     {
@@ -144,6 +152,8 @@ public class UnityGazeCalibrator : MonoBehaviour
             UnityEngine.Debug.Log($"Using Unity screen size for calibration: {w}x{h}");
         }
 
+        layoutWidth = w;
+        layoutHeight = h;
         float left = marginPx;
         float right = w - marginPx;
         float top = marginPx;
@@ -285,7 +295,8 @@ public class UnityGazeCalibrator : MonoBehaviour
             camera = canvas.worldCamera;
         }
         
-        float flippedY = Screen.height - screenPx.y;
+        float heightForFlip = layoutHeight > 0 ? layoutHeight : Screen.height;
+        float flippedY = heightForFlip - screenPx.y;
         
         Vector2 localPoint;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
