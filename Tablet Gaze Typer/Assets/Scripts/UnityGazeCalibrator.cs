@@ -295,13 +295,21 @@ public class UnityGazeCalibrator : MonoBehaviour
             camera = canvas.worldCamera;
         }
         
-        float heightForFlip = layoutHeight > 0 ? layoutHeight : Screen.height;
-        float flippedY = heightForFlip - screenPx.y;
+        Vector2 unityScreenPoint = screenPx;
+        
+        if (layoutWidth > 0 && layoutHeight > 0 && 
+            (Mathf.Abs(layoutWidth - Screen.width) > 1f || Mathf.Abs(layoutHeight - Screen.height) > 1f))
+        {
+            float scaleX = Screen.width / layoutWidth;
+            float scaleY = Screen.height / layoutHeight;
+            unityScreenPoint = new Vector2(screenPx.x * scaleX, screenPx.y * scaleY);
+        }
+        float flippedY = Screen.height - unityScreenPoint.y;
         
         Vector2 localPoint;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvas.GetComponent<RectTransform>(),
-            new Vector2(screenPx.x, flippedY),
+            new Vector2(unityScreenPoint.x, flippedY),
             camera,
             out localPoint);
         
