@@ -187,13 +187,32 @@ public class ThumbTypingController : MonoBehaviour
         {
             return false;
         }
-        if (r >= 3)
-        {
-            return false;
-        }
 
         gridMap = new Dictionary<Vector2Int, Button>();
         gridMap[new Vector2Int(0, 0)] = centerButton;
+
+        if (r >= 3)
+        {
+            // Bottom row: Space and Punctuation. Popup shows row above (Shift/Z/X) and both bottom keys.
+            Button shift = GetButtonAt(2, 0);
+            Button z = GetButtonAt(2, 1);
+            Button x = GetButtonAt(2, 2);
+            if (shift != null) gridMap[new Vector2Int(-1, 1)] = shift;
+            if (z != null) gridMap[new Vector2Int(0, 1)] = z;
+            if (x != null) gridMap[new Vector2Int(1, 1)] = x;
+            Button punct = GetButtonByName("Key_Punctuation");
+            Button space = GetButtonByName("Key_Space");
+            if (centerName == "Key_Punctuation")
+            {
+                if (space != null) gridMap[new Vector2Int(1, 0)] = space;
+            }
+            else
+            {
+                if (punct != null) gridMap[new Vector2Int(-1, 0)] = punct;
+            }
+            return true;
+        }
+
         int topRow = r - 1;
         if (topRow >= 0)
         {

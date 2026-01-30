@@ -102,46 +102,71 @@ public class KeyboardHighlighter : MonoBehaviour
     Button FindNearestButton(Vector2 screenPosition)
     {
         Button nearestButton = null;
-        float nearestDistance = float.MaxValue;  
+        float nearestDistance = float.MaxValue;
         Canvas canvas = keyboardPanel.GetComponentInParent<Canvas>();
         if (canvas == null) return null;
+        RectTransform canvasRect = canvas.GetComponent<RectTransform>();
         float clampedX = Mathf.Clamp(screenPosition.x, 0, Screen.width);
         float clampedY = Mathf.Clamp(screenPosition.y, 0, Screen.height);
-        
         float flippedY = Screen.height - clampedY;
-        
+        Vector2 screenPosFlipped = new Vector2(clampedX, flippedY);
         Camera camera = null;
         if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
         {
             camera = canvas.worldCamera;
         }
-        
+        //convert screen position to canvas coordinates
         Vector2 gazeCanvasPos;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvas.GetComponent<RectTransform>(),
-            new Vector2(clampedX, flippedY),
+            canvasRect,
+            screenPosFlipped,
             camera,
             out gazeCanvasPos);
-        
+
+        Vector3[] corners = new Vector3[4];
         foreach (Button button in keyboardButtons)
         {
             if (button == null || !button.gameObject.activeSelf) continue;
-            
             RectTransform buttonRect = button.GetComponent<RectTransform>();
             if (buttonRect == null) continue;
-            
-            Vector2 buttonCenter = buttonRect.anchoredPosition;
-            
-            float distance = Vector2.Distance(gazeCanvasPos, buttonCenter);
-            
+
+            buttonRect.GetWorldCorners(corners);
+            float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
+            for (int i = 0; i < 4; i++)
+            {
+                Vector2 screenCorner = RectTransformUtility.WorldToScreenPoint(camera, corners[i]);
+                Vector2 localCorner;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRect,
+                    screenCorner,
+                    camera,
+                    out localCorner);
+                if (localCorner.x < minX) minX = localCorner.x;
+                if (localCorner.x > maxX) maxX = localCorner.x;
+                if (localCorner.y < minY) minY = localCorner.y;
+                if (localCorner.y > maxY) maxY = localCorner.y;
+            }
+
+            float distance = DistanceFromPointToRect(gazeCanvasPos, minX, maxX, minY, maxY);
+
             if (distance < nearestDistance)
             {
                 nearestDistance = distance;
                 nearestButton = button;
             }
         }
-        
+
         return nearestButton;
+    }
+
+    //rather than using the center of the button, we use the entire button area to find the nearest button
+    static float DistanceFromPointToRect(Vector2 point, float minX, float maxX, float minY, float maxY)
+    {
+        if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY)
+            return 0f;
+        float dx = point.x < minX ? minX - point.x : (point.x > maxX ? point.x - maxX : 0f);
+        float dy = point.y < minY ? minY - point.y : (point.y > maxY ? point.y - maxY : 0f);
+        return Mathf.Sqrt(dx * dx + dy * dy);
     }
     
     void HighlightButton(Button button)
