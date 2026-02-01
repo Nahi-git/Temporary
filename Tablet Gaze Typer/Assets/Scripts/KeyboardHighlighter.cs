@@ -13,7 +13,11 @@ public class KeyboardHighlighter : MonoBehaviour
     public Color highlightColor = new Color(1f, 0.8f, 0f, 1f); 
     [Tooltip("Color used when multiple keys 'pop out' on the keyboard")]
     public Color popoutColor = new Color(0.6f, 0.85f, 1f, 1f);
-    public Color normalColor = Color.white;  
+    public Color normalColor = Color.white;
+    [Header("Dimming (thumb 3x3)")]
+    [Tooltip("Brightness multiplier for keys outside the 3x3 when thumb controller is active. Lower = darker / less selectable.")]
+    [Range(0.1f, 1f)]
+    public float nonSelectableDimFactor = 0.35f;  
     
     private List<Button> keyboardButtons = new List<Button>();
     private Button currentlyHighlightedButton = null;
@@ -220,7 +224,7 @@ public class KeyboardHighlighter : MonoBehaviour
             return;
         }
         externalHighlightActive = true;
-        UnhighlightAllPoppedOut();
+        RestoreAllButtonsToOriginal();
         poppedOutButtons.Clear();
         foreach (Button b in popoutButtons)
         {
@@ -230,6 +234,17 @@ public class KeyboardHighlighter : MonoBehaviour
             {
                 img.color = (b == selectedButton) ? highlightColor : popoutColor;
                 poppedOutButtons.Add(b);
+            }
+        }
+        // Dim all keys outside the 3x3 so it's clear they're not selectable
+        foreach (Button b in keyboardButtons)
+        {
+            if (b == null || poppedOutButtons.Contains(b)) continue;
+            Image img = b.GetComponent<Image>();
+            if (img != null)
+            {
+                Color orig = originalColors.TryGetValue(b, out Color c) ? c : normalColor;
+                img.color = new Color(orig.r * nonSelectableDimFactor, orig.g * nonSelectableDimFactor, orig.b * nonSelectableDimFactor, orig.a);
             }
         }
         currentlyHighlightedButton = selectedButton;
@@ -254,15 +269,18 @@ public class KeyboardHighlighter : MonoBehaviour
         poppedOutButtons.Clear();
     }
 
+    void RestoreAllButtonsToOriginal()
+    {
+        foreach (Button b in keyboardButtons)
+            UnhighlightButton(b);
+    }
+
     public void ResumeAutomaticHighlighting()
     {
         externalHighlightActive = false;
-        UnhighlightAllPoppedOut();
-        if (currentlyHighlightedButton != null)
-        {
-            UnhighlightButton(currentlyHighlightedButton);
-            currentlyHighlightedButton = null;
-        }
+        RestoreAllButtonsToOriginal();
+        poppedOutButtons.Clear();
+        currentlyHighlightedButton = null;
     }
     public void RefreshButtonList()
     {
