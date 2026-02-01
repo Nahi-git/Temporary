@@ -187,13 +187,10 @@ public class ThumbTypingController : MonoBehaviour
         {
             return false;
         }
-
         gridMap = new Dictionary<Vector2Int, Button>();
         gridMap[new Vector2Int(0, 0)] = centerButton;
-
         if (r >= 3)
         {
-            // Bottom row: Space and Punctuation. Popup shows row above (Shift/Z/X) and both bottom keys.
             Button shift = GetButtonAt(2, 0);
             Button z = GetButtonAt(2, 1);
             Button x = GetButtonAt(2, 2);
@@ -519,10 +516,11 @@ public class ThumbTypingController : MonoBehaviour
         
         selectedKey = centerButton;
         
-        //highlight the center key on keyboard initially
-        if (keyboardHighlighter != null && selectedKey != null)
+        //usability fieature to highlight all thumb panel keys on the on-screen keyboard
+        if (keyboardHighlighter != null && keyObjectToButtonMap.Count > 0)
         {
-            keyboardHighlighter.HighlightButtonExternal(selectedKey);
+            List<Button> popoutButtons = new List<Button>(keyObjectToButtonMap.Values);
+            keyboardHighlighter.HighlightButtonsExternal(popoutButtons, selectedKey);
         }
     }
     
@@ -644,7 +642,7 @@ public class ThumbTypingController : MonoBehaviour
             UpdateKeyVisuals();
             if (keyboardHighlighter != null && selectedKey != null)
             {
-                keyboardHighlighter.HighlightButtonExternal(selectedKey);
+                keyboardHighlighter.SetSelectedPoppedButton(selectedKey);
             }
         }
     }

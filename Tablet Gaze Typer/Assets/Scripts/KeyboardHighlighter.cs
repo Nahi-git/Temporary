@@ -11,6 +11,8 @@ public class KeyboardHighlighter : MonoBehaviour
     
     [Header("Highlight Settings")]
     public Color highlightColor = new Color(1f, 0.8f, 0f, 1f); 
+    [Tooltip("Color used when multiple keys 'pop out' on the keyboard")]
+    public Color popoutColor = new Color(0.6f, 0.85f, 1f, 1f);
     public Color normalColor = Color.white;  
     
     private List<Button> keyboardButtons = new List<Button>();
@@ -18,6 +20,7 @@ public class KeyboardHighlighter : MonoBehaviour
     private Dictionary<Button, Color> originalColors = new Dictionary<Button, Color>();
     private bool externalHighlightActive = false;
     private bool highlightingEnabled = true;
+    private List<Button> poppedOutButtons = new List<Button>();
     public Button CurrentlyHighlightedButton => currentlyHighlightedButton;
     
     void Start()
@@ -199,6 +202,7 @@ public class KeyboardHighlighter : MonoBehaviour
     {
         if (button == null) return;
         externalHighlightActive = true;
+        UnhighlightAllPoppedOut();
         if (currentlyHighlightedButton != null && currentlyHighlightedButton != button)
         {
             UnhighlightButton(currentlyHighlightedButton);
@@ -206,9 +210,54 @@ public class KeyboardHighlighter : MonoBehaviour
         HighlightButton(button);
         currentlyHighlightedButton = button;
     }
+    //highlight all thumb panel keys on the on-screen keyboard (users dont need to look bottom right for available keys)
+    public void HighlightButtonsExternal(List<Button> popoutButtons, Button selectedButton)
+    {
+        if (popoutButtons == null || popoutButtons.Count == 0)
+        {
+            if (selectedButton != null)
+                HighlightButtonExternal(selectedButton);
+            return;
+        }
+        externalHighlightActive = true;
+        UnhighlightAllPoppedOut();
+        poppedOutButtons.Clear();
+        foreach (Button b in popoutButtons)
+        {
+            if (b == null) continue;
+            Image img = b.GetComponent<Image>();
+            if (img != null)
+            {
+                img.color = (b == selectedButton) ? highlightColor : popoutColor;
+                poppedOutButtons.Add(b);
+            }
+        }
+        currentlyHighlightedButton = selectedButton;
+    }
+
+    public void SetSelectedPoppedButton(Button selectedButton)
+    {
+        if (poppedOutButtons.Count == 0) return;
+        foreach (Button b in poppedOutButtons)
+        {
+            Image img = b.GetComponent<Image>();
+            if (img != null)
+                img.color = (b == selectedButton) ? highlightColor : popoutColor;
+        }
+        currentlyHighlightedButton = selectedButton;
+    }
+
+    void UnhighlightAllPoppedOut()
+    {
+        foreach (Button b in poppedOutButtons)
+            UnhighlightButton(b);
+        poppedOutButtons.Clear();
+    }
+
     public void ResumeAutomaticHighlighting()
     {
         externalHighlightActive = false;
+        UnhighlightAllPoppedOut();
         if (currentlyHighlightedButton != null)
         {
             UnhighlightButton(currentlyHighlightedButton);
