@@ -32,6 +32,7 @@ public class ThumbTypingController : MonoBehaviour
     private bool isHolding = false;
     private float holdStartTime = 0f;
     private Vector2 holdStartPosition;
+    private Vector2 lastThumbReleaseScreenPosition;
     private GameObject surroundingKeysPanel;
     private List<GameObject> surroundingKeyObjects = new List<GameObject>();
     private Button centerKeyButton = null;
@@ -298,11 +299,13 @@ public class ThumbTypingController : MonoBehaviour
                 isHolding = true;
                 holdStartTime = Time.time;
                 holdStartPosition = touchPosition;
+                UnityEngine.Debug.Log($"[Thumb] Press started at screen coordinates: x={touchPosition.x:F0}, y={touchPosition.y:F0}");
             }
             else if (primaryTouch.press.wasReleasedThisFrame)
             {
                 if (isHolding)
                 {
+                    lastThumbReleaseScreenPosition = primaryTouch.position.ReadValue();
                     if (Time.time - holdStartTime >= holdTimeThreshold)
                     {
                         TypeSelectedKey();
@@ -326,12 +329,14 @@ public class ThumbTypingController : MonoBehaviour
                         isHolding = true;
                         holdStartTime = Time.time;
                         holdStartPosition = mousePos;
+                        UnityEngine.Debug.Log($"[Thumb] Press started at screen coordinates: x={mousePos.x:F0}, y={mousePos.y:F0}");
                     }
                 }
                 else if (mouse.leftButton.wasReleasedThisFrame)
                 {
                     if (isHolding)
                     {
+                        lastThumbReleaseScreenPosition = mouse.position.ReadValue();
                         if (Time.time - holdStartTime >= holdTimeThreshold)
                         {
                             TypeSelectedKey();
@@ -709,6 +714,7 @@ public class ThumbTypingController : MonoBehaviour
         {
             return;
         }
+        UnityEngine.Debug.Log($"[Thumb] Key typed at release coordinates: x={lastThumbReleaseScreenPosition.x:F0}, y={lastThumbReleaseScreenPosition.y:F0}");
         
         string keyText = GetRawButtonText(selectedKey);
         string buttonName = selectedKey.gameObject.name;
