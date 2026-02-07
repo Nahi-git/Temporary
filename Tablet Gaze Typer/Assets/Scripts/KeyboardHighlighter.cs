@@ -105,6 +105,10 @@ public class KeyboardHighlighter : MonoBehaviour
         
         return Vector2.zero;
     }
+    public Vector2 GetGazePositionForExternal()
+    {
+        return GetGazePosition();
+    }
     
     Button FindNearestButton(Vector2 screenPosition)
     {
@@ -236,7 +240,7 @@ public class KeyboardHighlighter : MonoBehaviour
                 poppedOutButtons.Add(b);
             }
         }
-        // Dim all keys outside the 3x3 so it's clear they're not selectable
+        //make all other keys dimmed 
         foreach (Button b in keyboardButtons)
         {
             if (b == null || poppedOutButtons.Contains(b)) continue;

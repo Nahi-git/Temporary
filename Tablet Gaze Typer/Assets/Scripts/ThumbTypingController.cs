@@ -172,6 +172,44 @@ public class ThumbTypingController : MonoBehaviour
     {
         return centerKeyName == "Key_Shift" || centerKeyName == "Key_Z" || centerKeyName == "Key_X";
     }
+
+    //for space bar on the bottom row, it should show 3 closest keys from the above row on the grid
+    void GetThreeClosestKeysFromRow(int rowIndex, float gazeScreenX, out Button left, out Button center, out Button right)
+    {
+        left = null;
+        center = null;
+        right = null;
+        if (rowIndex < 0 || rowIndex >= QwertyRows.Length) return;
+        Canvas canvas = keyboardPanel != null ? keyboardPanel.GetComponentInParent<Canvas>() : null;
+        if (canvas == null) return;
+        Camera cam = (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace) ? canvas.worldCamera : null;
+        string[] row = QwertyRows[rowIndex];
+        int numCols = row.Length;
+
+        int bestCol = 0;
+        float bestDist = float.MaxValue;
+        for (int col = 0; col < numCols; col++)
+        {
+            Button b = GetButtonAt(rowIndex, col);
+            if (b == null) continue;
+            RectTransform rt = b.GetComponent<RectTransform>();
+            if (rt == null) continue;
+            Vector2 centerScreen = RectTransformUtility.WorldToScreenPoint(cam, rt.position);
+            float dist = Mathf.Abs(centerScreen.x - gazeScreenX);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestCol = col;
+            }
+        }
+
+        int leftCol = Mathf.Clamp(bestCol - 1, 0, numCols - 1);
+        int rightCol = Mathf.Clamp(bestCol + 1, 0, numCols - 1);
+        left = GetButtonAt(rowIndex, leftCol);
+        center = GetButtonAt(rowIndex, bestCol);
+        right = GetButtonAt(rowIndex, rightCol);
+    }
+
     //switch to hardcoded grid map for thumb typing
     bool TryBuildHardcodedGridMap(Button centerButton, out Dictionary<Vector2Int, Button> gridMap, out bool wideSpaceBottom, out bool punctPlusSpaceBottom)
     {
@@ -192,20 +230,36 @@ public class ThumbTypingController : MonoBehaviour
         gridMap[new Vector2Int(0, 0)] = centerButton;
         if (r >= 3)
         {
-            Button shift = GetButtonAt(2, 0);
-            Button z = GetButtonAt(2, 1);
-            Button x = GetButtonAt(2, 2);
-            if (shift != null) gridMap[new Vector2Int(-1, 1)] = shift;
-            if (z != null) gridMap[new Vector2Int(0, 1)] = z;
-            if (x != null) gridMap[new Vector2Int(1, 1)] = x;
             Button punct = GetButtonByName("Key_Punctuation");
             Button space = GetButtonByName("Key_Space");
             if (centerName == "Key_Punctuation")
             {
+                Button shift = GetButtonAt(2, 0);
+                Button z = GetButtonAt(2, 1);
+                Button x = GetButtonAt(2, 2);
+                if (shift != null) gridMap[new Vector2Int(-1, 1)] = shift;
+                if (z != null) gridMap[new Vector2Int(0, 1)] = z;
+                if (x != null) gridMap[new Vector2Int(1, 1)] = x;
                 if (space != null) gridMap[new Vector2Int(1, 0)] = space;
+            }
+            //space bar is special as it has a wider range of keys to choose from (finds 3 closest keys from the above row)
+            else if (centerName == "Key_Space" && space != null)
+            {
+                if (punct != null) gridMap[new Vector2Int(-1, 0)] = punct;
+                float gazeScreenX = keyboardHighlighter != null ? keyboardHighlighter.GetGazePositionForExternal().x : Screen.width * 0.5f;
+                GetThreeClosestKeysFromRow(2, gazeScreenX, out Button rowLeft, out Button rowCenter, out Button rowRight);
+                if (rowLeft != null) gridMap[new Vector2Int(-1, 1)] = rowLeft;
+                if (rowCenter != null) gridMap[new Vector2Int(0, 1)] = rowCenter;
+                if (rowRight != null) gridMap[new Vector2Int(1, 1)] = rowRight;
             }
             else
             {
+                Button shift = GetButtonAt(2, 0);
+                Button z = GetButtonAt(2, 1);
+                Button x = GetButtonAt(2, 2);
+                if (shift != null) gridMap[new Vector2Int(-1, 1)] = shift;
+                if (z != null) gridMap[new Vector2Int(0, 1)] = z;
+                if (x != null) gridMap[new Vector2Int(1, 1)] = x;
                 if (punct != null) gridMap[new Vector2Int(-1, 0)] = punct;
             }
             return true;
