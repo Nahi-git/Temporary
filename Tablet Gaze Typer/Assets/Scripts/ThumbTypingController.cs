@@ -27,8 +27,12 @@ public class ThumbTypingController : MonoBehaviour
     public float keySpacing = 10f;
     
     [Header("Input Field")]
-    public TMP_InputField targetInputField; 
+    public TMP_InputField targetInputField;
     
+    [Header("Grid Rotation")]
+    [Tooltip("Optional button that toggles the thumb typing popup grid between 45° left and normal.")]
+    public Button rotateGridLeftButton;
+
     private bool isHolding = false;
     private float holdStartTime = 0f;
     private Vector2 holdStartPosition;
@@ -39,7 +43,8 @@ public class ThumbTypingController : MonoBehaviour
     private Dictionary<GameObject, Button> keyObjectToButtonMap = new Dictionary<GameObject, Button>();
     private Button selectedKey = null;
     private bool isShiftActive = false;
-    private Dictionary<Button, string> originalButtonTexts = new Dictionary<Button, string>(); 
+    private Dictionary<Button, string> originalButtonTexts = new Dictionary<Button, string>();
+    private float currentGridRotationZ = 0f; 
 
     [Header("Thumb Popup Layout")]
     [Tooltip("If enabled, the surrounding-key popup uses a hard-coded QWERTY neighbor layout based on button GameObject names (e.g. Key_A, Key_Shift, Key_Space).")]
@@ -61,6 +66,10 @@ public class ThumbTypingController : MonoBehaviour
         }
         BuildButtonLookup();
         Invoke(nameof(StoreOriginalKeyboardTexts), 0.1f);
+        if (rotateGridLeftButton != null)
+        {
+            rotateGridLeftButton.onClick.AddListener(ToggleThumbGridRotation45);
+        }
     }
 
     public void RefreshStoredKeyboardTexts()
@@ -75,6 +84,22 @@ public class ThumbTypingController : MonoBehaviour
             isShiftActive = false;
             UpdateKeyboardDisplay();
         }
+    }
+    
+    //toggles the thumb typing popup grid between 45° left and normal
+    //we will use this in user testing to see if its more intuitive to have the grid rotated or not
+    public void ToggleThumbGridRotation45()
+    {
+        currentGridRotationZ = Mathf.Approximately(currentGridRotationZ, 0f) ? 45f : 0f;
+        ApplyThumbGridRotation();
+    }
+    
+    void ApplyThumbGridRotation()
+    {
+        if (surroundingKeysPanel == null) return;
+        RectTransform rt = surroundingKeysPanel.GetComponent<RectTransform>();
+        if (rt == null) return;
+        rt.localEulerAngles = new Vector3(rt.localEulerAngles.x, rt.localEulerAngles.y, currentGridRotationZ);
     }
     
     void StoreOriginalKeyboardTexts()
@@ -476,6 +501,8 @@ public class ThumbTypingController : MonoBehaviour
             panelRect.pivot = new Vector2(0.5f, 0.5f);
             panelRect.anchoredPosition = panelLocalPos;
         }
+        //if the grid is rotated, apply the rotation
+        ApplyThumbGridRotation();
         CreateSurroundingKeyVisuals(gridMap, centerKeyButton, wideSpaceBottom, punctPlusSpaceBottom);
     }
     
@@ -490,7 +517,8 @@ public class ThumbTypingController : MonoBehaviour
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.anchoredPosition = Vector2.zero;     
+        panelRect.anchoredPosition = Vector2.zero;
+        panelRect.localEulerAngles = new Vector3(0f, 0f, currentGridRotationZ);
         Image panelImage = panel.AddComponent<Image>();
         panelImage.color = new Color(0, 0, 0, 0.3f);
         
