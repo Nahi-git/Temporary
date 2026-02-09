@@ -1,21 +1,48 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using TMPro;
 using System.Collections;
 using System.Collections.Generic;
 
 public class UnityGazeCalibrator : MonoBehaviour
 {
+    //ensure only one instance of the calibrator exists
+    private static UnityGazeCalibrator _instance;
+    public static UnityGazeCalibrator Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = FindObjectOfType<UnityGazeCalibrator>();
+                if (_instance == null)
+                {
+                    GameObject go = new GameObject("UnityGazeCalibrator");
+                    _instance = go.AddComponent<UnityGazeCalibrator>();
+                    DontDestroyOnLoad(go);
+                }
+            }
+            return _instance;
+        }
+    }
+
     [Header("References")]
     public GazeWebSocketClient gazeClient;
     public RectTransform calibrationDot;   
-    public Text instructionText;
-    public GameObject keyboardPanel;          
+    public TextMeshProUGUI instructionText;
+    public GameObject keyboardPanel;
+    [Tooltip("Button or panel to show after calibration (e.g. 'Go to Gaze Typer'). Assign and it will be shown when calibration completes.")]
+    public GameObject postCalibrationButton;          
 
     [Header("Calibration Settings")]
     public float marginPx = 120f;          
     public float sampleSeconds = 1.2f;     
     public KeyCode captureKey = KeyCode.Space;
+
+    [Tooltip("If true, this calibrator will persist across scene changes")]
+    public bool persistAcrossScenes = true;
 
     [Header("Output")]
     public bool calibrated;
@@ -35,14 +62,82 @@ public class UnityGazeCalibrator : MonoBehaviour
     int index = 0;
     bool isCalibrating = false; 
 
+    void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+            if (persistAcrossScenes)
+            {
+                DontDestroyOnLoad(gameObject);
+                SceneManager.sceneLoaded += OnSceneLoaded;
+            }
+        }
+        else if (_instance != this)
+        {
+            //if another instance already exists, destroy this one
+            UnityEngine.Debug.LogWarning("UnityGazeCalibrator: Another instance already exists. Destroying duplicate.");
+            Destroy(gameObject);
+            return;
+        }
+    }
+
+    void OnDestroy()
+    {
+        //unsubscribe from scene loaded events
+        if (_instance == this)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        //update UI references when a new scene is loaded
+        UpdateUIReferences();
+        UnityEngine.Debug.Log($"UnityGazeCalibrator: Scene '{scene.name}' loaded. UI references updated.");
+    }
+
     void Start()
     {
-        if (!gazeClient) UnityEngine.Debug.LogError("Assign GazeWebSocketClient");
-        if (!calibrationDot) UnityEngine.Debug.LogError("Assign calibrationDot (UI)");
+        //auto find references if not assigned
+        if (gazeClient == null)
+        {
+            gazeClient = FindObjectOfType<GazeWebSocketClient>();
+            if (!gazeClient) UnityEngine.Debug.LogError("UnityGazeCalibrator: Assign GazeWebSocketClient or ensure one exists in the scene");
+        }
+        
+        if (calibrationDot == null)
+        {
+            //try to find calibration dot in scene
+            GameObject dotObj = GameObject.Find("CalibrationDot");
+            if (dotObj != null)
+            {
+                calibrationDot = dotObj.GetComponent<RectTransform>();
+            }
+            if (calibrationDot == null) UnityEngine.Debug.LogWarning("UnityGazeCalibrator: Assign calibrationDot (UI) - calibration UI may not work");
+        }
+        
+        if (instructionText == null)
+        {
+            GameObject textObj = GameObject.Find("InstructionText");
+            if (textObj != null)
+            {
+                instructionText = textObj.GetComponent<TextMeshProUGUI>();
+            }
+        }
+        
+        if (keyboardPanel == null)
+        {
+            keyboardPanel = GameObject.Find("KeyboardPanel");
+        }
+
         Build9PointLayout();
         HideDot();
-        HideKeyboard();  
-        SetInstruction("Press C to calibrate.");
+        HideKeyboard();
+        HideInstructionText();
+        HidePostCalibrationButton();
+        LoadCalibrationData();
     }
 
     void Update()
@@ -126,9 +221,9 @@ public class UnityGazeCalibrator : MonoBehaviour
                 UnityEngine.Debug.LogWarning($"Layout size mismatch: layout={layoutWidth}x{layoutHeight}, browser={gazeClient.browserWindowSize.x}x{gazeClient.browserWindowSize.y}");
             }
         }
-        HideKeyboard();  
+        HideKeyboard();
+        ShowInstructionText();
         ShowDotAt(layout[index]);
-        SetInstruction("Look at the dot and press SPACE to capture (repeat for each point).");
     }
 
     // --- layout storage ---
@@ -181,7 +276,6 @@ public class UnityGazeCalibrator : MonoBehaviour
     {
         if (!isCalibrating) yield break;
 
-        SetInstruction($"Capturing point {index+1}/9 ... keep looking at the dot");
         yield return new WaitForSeconds(0.2f);
 
         float t = 0f;
@@ -240,27 +334,34 @@ public class UnityGazeCalibrator : MonoBehaviour
             isCalibrating = false;
             ema = ApplyAffine(gazeClient.rawGaze);
 
+            SaveCalibrationData();
             HideDot();
-            ShowKeyboard();  
-            SetInstruction("Calibration complete. Press C to recalibrate.");
+            HideInstructionText();
+            ShowKeyboard();
+            ShowPostCalibrationButton();
         }
         else
         {
             ShowDotAt(layout[index]);
-            SetInstruction("Look at the dot and press SPACE to capture.");
         }
     }
 
     //UI helpers (dot positions in Canvas space)
     void ShowDotAt(Vector2 screenPx)
     {
-        calibrationDot.gameObject.SetActive(true);
-        calibrationDot.anchoredPosition = ScreenPxToCanvasAnchored(screenPx);
+        if (calibrationDot != null)
+        {
+            calibrationDot.gameObject.SetActive(true);
+            calibrationDot.anchoredPosition = ScreenPxToCanvasAnchored(screenPx);
+        }
     }
 
     void HideDot()
     {
-        calibrationDot.gameObject.SetActive(false);
+        if (calibrationDot != null)
+        {
+            calibrationDot.gameObject.SetActive(false);
+        }
     }
 
     void ShowKeyboard()
@@ -279,13 +380,119 @@ public class UnityGazeCalibrator : MonoBehaviour
         }
     }
 
-    void SetInstruction(string s)
+    void ShowInstructionText()
     {
-        if (instructionText) instructionText.text = s;
+        if (instructionText != null)
+            instructionText.gameObject.SetActive(true);
+    }
+
+    void HideInstructionText()
+    {
+        if (instructionText != null)
+            instructionText.gameObject.SetActive(false);
+    }
+
+    void ShowPostCalibrationButton()
+    {
+        if (postCalibrationButton != null)
+            postCalibrationButton.SetActive(true);
+    }
+
+    void HidePostCalibrationButton()
+    {
+        if (postCalibrationButton != null)
+            postCalibrationButton.SetActive(false);
+    }
+
+    //call this when switching scenes to update UI references
+    public void UpdateUIReferences()
+    {
+        //auto find references in the new scene
+        if (gazeClient == null)
+        {
+            gazeClient = FindObjectOfType<GazeWebSocketClient>();
+        }
+        
+        if (calibrationDot == null)
+        {
+            GameObject dotObj = GameObject.Find("CalibrationDot");
+            if (dotObj != null)
+            {
+                calibrationDot = dotObj.GetComponent<RectTransform>();
+            }
+        }
+        
+        if (instructionText == null)
+        {
+            GameObject textObj = GameObject.Find("InstructionText");
+            if (textObj != null)
+            {
+                instructionText = textObj.GetComponent<TextMeshProUGUI>();
+            }
+        }
+        
+        if (keyboardPanel == null)
+        {
+            keyboardPanel = GameObject.Find("KeyboardPanel");
+        }
+    }
+
+    //save calibration data to PlayerPrefs
+    void SaveCalibrationData()
+    {
+        PlayerPrefs.SetInt("GazeCalibrated", calibrated ? 1 : 0);
+        PlayerPrefs.SetFloat("GazeCal_a", a);
+        PlayerPrefs.SetFloat("GazeCal_b", b);
+        PlayerPrefs.SetFloat("GazeCal_c", c);
+        PlayerPrefs.SetFloat("GazeCal_d", d);
+        PlayerPrefs.SetFloat("GazeCal_e", e);
+        PlayerPrefs.SetFloat("GazeCal_f", f);
+        PlayerPrefs.Save();
+        UnityEngine.Debug.Log("Calibration data saved to PlayerPrefs");
+    }
+
+    //load calibration data from PlayerPrefs
+    public bool LoadCalibrationData()
+    {
+        if (PlayerPrefs.HasKey("GazeCalibrated") && PlayerPrefs.GetInt("GazeCalibrated") == 1)
+        {
+            a = PlayerPrefs.GetFloat("GazeCal_a");
+            b = PlayerPrefs.GetFloat("GazeCal_b");
+            c = PlayerPrefs.GetFloat("GazeCal_c");
+            d = PlayerPrefs.GetFloat("GazeCal_d");
+            e = PlayerPrefs.GetFloat("GazeCal_e");
+            f = PlayerPrefs.GetFloat("GazeCal_f");
+            calibrated = true;
+            
+            if (gazeClient != null)
+            {
+                ema = ApplyAffine(gazeClient.rawGaze);
+            }
+            
+            UnityEngine.Debug.Log("Calibration data loaded from PlayerPrefs");
+            return true;
+        }
+        return false;
+    }
+
+    //clear saved calibration data
+    public void ClearCalibrationData()
+    {
+        PlayerPrefs.DeleteKey("GazeCalibrated");
+        PlayerPrefs.DeleteKey("GazeCal_a");
+        PlayerPrefs.DeleteKey("GazeCal_b");
+        PlayerPrefs.DeleteKey("GazeCal_c");
+        PlayerPrefs.DeleteKey("GazeCal_d");
+        PlayerPrefs.DeleteKey("GazeCal_e");
+        PlayerPrefs.DeleteKey("GazeCal_f");
+        calibrated = false;
+        UnityEngine.Debug.Log("Calibration data cleared");
     }
 
     Vector2 ScreenPxToCanvasAnchored(Vector2 screenPx)
     {
+        if (calibrationDot == null) return Vector2.zero;
+        
         Canvas canvas = calibrationDot.GetComponentInParent<Canvas>();
         if (canvas == null) return Vector2.zero;
         
