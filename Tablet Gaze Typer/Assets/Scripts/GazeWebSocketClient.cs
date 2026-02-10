@@ -5,6 +5,8 @@ using System.Collections;
 
 public class GazeWebSocketClient : MonoBehaviour
 {
+    private static GazeWebSocketClient _instance;
+
     [Header("Gaze Data")]
     public Vector2 rawGaze;
     
@@ -12,18 +14,54 @@ public class GazeWebSocketClient : MonoBehaviour
     public Vector2 browserWindowSize = Vector2.zero; 
     
     WebSocket ws;
+    private bool isConnecting = false;
+    public WebSocketState ConnectionState => ws != null ? ws.State : WebSocketState.Closed;
+    void Awake()
+    {
+        //only one instance of GazeWebSocketClient exists
+        if (_instance == null)
+        {
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else if (_instance != this)
+        {
+            //another instance of GazeWebSocketClient already exists, destroy this one
+            UnityEngine.Debug.LogWarning("GazeWebSocketClient: Another instance already exists. Destroying duplicate.");
+            Destroy(gameObject);
+            return;
+        }
+    }
 
     void Start()
     {
-        StartCoroutine(ConnectWithRetry());
+        //only connect if not already connected or connecting
+        if (ws == null && !isConnecting)
+        {
+            StartCoroutine(ConnectWithRetry());
+        }
+        else if (ws != null && ws.State == WebSocketState.Open)
+        {
+            UnityEngine.Debug.Log("GazeWebSocketClient: Already connected, maintaining connection.");
+        }
     }
 
     IEnumerator ConnectWithRetry()
     {
+        if (isConnecting)
+            yield break;
+            
+        isConnecting = true;
         yield return new WaitForSeconds(2.5f);
 
         while (true)
         {
+            //if already connected, stop trying
+            if (ws != null && ws.State == WebSocketState.Open)
+            {
+                isConnecting = false;
+                yield break;
+            }
             ws = new WebSocket("ws://localhost:8765");
 
             ws.OnOpen += () => UnityEngine.Debug.Log("Unity connected to WebSocket");
@@ -59,6 +97,11 @@ public class GazeWebSocketClient : MonoBehaviour
                         if (data.x != 0 || data.y != 0 || json.Contains("\"x\"")) // Valid gaze data
                         {
                             rawGaze = new Vector2(data.x, data.y);
+                            //debug logging occasionally
+                            if (Time.frameCount % 60 == 0) 
+                            {
+                                UnityEngine.Debug.Log($"GazeWebSocketClient: Received gaze data: ({rawGaze.x:F1}, {rawGaze.y:F1})");
+                            }
                         }
                     }
                     catch
@@ -78,7 +121,10 @@ public class GazeWebSocketClient : MonoBehaviour
             }
 
             if (ws.State == WebSocketState.Open)
+            {
+                isConnecting = false;
                 yield break;
+            }
 
             yield return new WaitForSeconds(1f);
         }

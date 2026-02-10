@@ -21,6 +21,22 @@ public class GazeCursor : MonoBehaviour
         {
             cursorImage = GetComponent<Image>();
         }
+        
+        //autofind gazeSource and calibrator if not assigned
+        if (gazeSource == null)
+        {
+            gazeSource = FindObjectOfType<GazeWebSocketClient>();
+            if (gazeSource == null)
+                UnityEngine.Debug.LogWarning("GazeCursor: Could not find GazeWebSocketClient!");
+        }
+        
+        if (calibrator == null)
+        {
+            calibrator = FindObjectOfType<UnityGazeCalibrator>();
+            if (calibrator == null)
+                UnityEngine.Debug.LogWarning("GazeCursor: Could not find UnityGazeCalibrator!");
+        }
+        
         UpdateVisibility();
     }
     
@@ -49,7 +65,22 @@ public class GazeCursor : MonoBehaviour
 
     void Update()
     {
-        if (gazeSource == null) return;
+        //autofind gazeSource and calibrator if they are missing (in case scene switched)
+        if (gazeSource == null)
+        {
+            gazeSource = FindObjectOfType<GazeWebSocketClient>();
+            if (gazeSource == null)
+            {
+                if (Time.frameCount % 60 == 0)
+                    UnityEngine.Debug.LogWarning("GazeCursor: gazeSource is null, cannot update cursor position.");
+                return;
+            }
+        }
+        
+        if (calibrator == null)
+        {
+            calibrator = FindObjectOfType<UnityGazeCalibrator>();
+        }
 
         // Use calibrated gaze if available, otherwise use raw gaze
         Vector2 gazePosition;
@@ -63,6 +94,12 @@ public class GazeCursor : MonoBehaviour
         else
         {
             gazePosition = gazeSource.rawGaze;
+        }
+        
+        //debug logging occasionally
+        if (Time.frameCount % 120 == 0)
+        {
+            UnityEngine.Debug.Log($"GazeCursor: gazePosition=({gazePosition.x:F1}, {gazePosition.y:F1}), calibrated={usingCalibrated}, calibrator.calibrated={(calibrator != null ? calibrator.calibrated.ToString() : "null")}");
         }
 
         //change color when calibrated
@@ -81,6 +118,11 @@ public class GazeCursor : MonoBehaviour
             wasCalibrated = usingCalibrated;
         }
 
+        if (!rt.gameObject.activeSelf)
+        {
+            rt.gameObject.SetActive(true);
+        }
+        
         float clampedX = Mathf.Clamp(gazePosition.x, 0, Screen.width);
         float clampedY = Mathf.Clamp(gazePosition.y, 0, Screen.height);
         float flippedY = Screen.height - clampedY;
@@ -95,13 +137,20 @@ public class GazeCursor : MonoBehaviour
             }
             
             Vector2 localPoint;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            bool success = RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 canvas.GetComponent<RectTransform>(),
                 new Vector2(clampedX, flippedY),
                 camera,
                 out localPoint);
             
-            rt.anchoredPosition = localPoint;
+            if (success)
+            {
+                rt.anchoredPosition = localPoint;
+            }
+            else if (Time.frameCount % 120 == 0)
+            {
+                UnityEngine.Debug.LogWarning($"GazeCursor: Failed to convert screen point to local point. gazePosition=({gazePosition.x:F1}, {gazePosition.y:F1})");
+            }
         }
         else
         {
@@ -109,6 +158,10 @@ public class GazeCursor : MonoBehaviour
             float x = clampedX - Screen.width / 2f;
             float y = -(clampedY - Screen.height / 2f);
             rt.anchoredPosition = new Vector2(x, y);
+            if (Time.frameCount % 120 == 0)
+            {
+                UnityEngine.Debug.LogWarning("GazeCursor: No Canvas found, using fallback positioning.");
+            }
         }
     }
 }

@@ -60,7 +60,9 @@ public class UnityGazeCalibrator : MonoBehaviour
     List<Vector2> measuredPoints = new List<Vector2>(); // averaged raw gaze
 
     int index = 0;
-    bool isCalibrating = false; 
+    bool isCalibrating = false;
+    private float lastGazeLogTime = 0f;
+    private const float GAZE_LOG_INTERVAL = 2f;
 
     void Awake()
     {
@@ -95,6 +97,10 @@ public class UnityGazeCalibrator : MonoBehaviour
     {
         //update UI references when a new scene is loaded
         UpdateUIReferences();
+        if (!isCalibrating)
+        {
+            HideDot();
+        }
         UnityEngine.Debug.Log($"UnityGazeCalibrator: Scene '{scene.name}' loaded. UI references updated.");
     }
 
@@ -138,6 +144,10 @@ public class UnityGazeCalibrator : MonoBehaviour
         HideInstructionText();
         HidePostCalibrationButton();
         LoadCalibrationData();
+        if (!isCalibrating && calibrationDot != null)
+        {
+            HideDot();
+        }
     }
 
     void Update()
@@ -182,9 +192,15 @@ public class UnityGazeCalibrator : MonoBehaviour
         }
 
         //update calibrated gaze continuously
-        if (calibrated)
+        if (calibrated && gazeClient != null)
         {
             var raw = gazeClient.rawGaze;
+            //debug logging occasionally
+            if (Time.time - lastGazeLogTime > GAZE_LOG_INTERVAL)
+            {
+                lastGazeLogTime = Time.time;
+                UnityEngine.Debug.Log($"UnityGazeCalibrator: Raw gaze: ({raw.x:F1}, {raw.y:F1}), Connection: {gazeClient.ConnectionState}");
+            }
             var mapped = ApplyAffine(raw);
             
             //clamp calibrated gaze to screen bounds
@@ -197,6 +213,19 @@ public class UnityGazeCalibrator : MonoBehaviour
                 calibratedGaze = ema;
             }
             else calibratedGaze = mapped;
+        }
+        else if (calibrated && gazeClient == null)
+        {
+            //autofind gazeClient if it is missing
+            gazeClient = FindObjectOfType<GazeWebSocketClient>();
+            if (gazeClient == null)
+            {
+                UnityEngine.Debug.LogWarning("UnityGazeCalibrator: gazeClient is null, cannot update calibrated gaze.");
+            }
+            else
+            {
+                UnityEngine.Debug.Log($"UnityGazeCalibrator: Re-found gazeClient. Connection: {gazeClient.ConnectionState}");
+            }
         }
     }
 
@@ -407,10 +436,15 @@ public class UnityGazeCalibrator : MonoBehaviour
     //call this when switching scenes to update UI references
     public void UpdateUIReferences()
     {
-        //auto find references in the new scene
+        // Always re-find the gaze client to ensure we have the persistent instance
+        gazeClient = FindObjectOfType<GazeWebSocketClient>();
         if (gazeClient == null)
         {
-            gazeClient = FindObjectOfType<GazeWebSocketClient>();
+            UnityEngine.Debug.LogError("UnityGazeCalibrator: Could not find GazeWebSocketClient after scene load!");
+        }
+        else
+        {
+            UnityEngine.Debug.Log($"UnityGazeCalibrator: Found GazeWebSocketClient. WebSocket state: {gazeClient.ConnectionState}");
         }
         
         if (calibrationDot == null)
@@ -434,6 +468,10 @@ public class UnityGazeCalibrator : MonoBehaviour
         if (keyboardPanel == null)
         {
             keyboardPanel = GameObject.Find("KeyboardPanel");
+        }
+        if (!isCalibrating && calibrationDot != null)
+        {
+            HideDot();
         }
     }
 

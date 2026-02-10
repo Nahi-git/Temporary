@@ -4,11 +4,39 @@ using System.IO;
 
 public class AppBootstrap : MonoBehaviour
 {
+    private static AppBootstrap _instance;
+    private static bool _hasStarted = false;
+
+    void Awake()
+    {
+        //only one instance of AppBootstrap exists
+        if (_instance == null)
+        {
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else if (_instance != this)
+        {
+            UnityEngine.Debug.LogWarning("AppBootstrap: Another instance already exists. Destroying duplicate.");
+            Destroy(gameObject);
+            return;
+        }
+    }
+
     void Start()
     {
-        StartNodeServer();
-        StartHttpServer();
-        Invoke(nameof(StartChrome), 3f); // wait for servers
+        //start servers and Chrome once, even if scene reloads
+        if (!_hasStarted)
+        {
+            _hasStarted = true;
+            StartNodeServer();
+            StartHttpServer();
+            Invoke(nameof(StartChrome), 3f); // wait for servers
+        }
+        else
+        {
+            UnityEngine.Debug.Log("AppBootstrap: Servers and Chrome already started, skipping initialization.");
+        }
     }
 
     void StartNodeServer()

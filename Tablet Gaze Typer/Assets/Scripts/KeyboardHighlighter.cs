@@ -29,6 +29,21 @@ public class KeyboardHighlighter : MonoBehaviour
     
     void Start()
     {
+        // Auto-find references if not assigned
+        if (calibrator == null)
+        {
+            calibrator = FindObjectOfType<UnityGazeCalibrator>();
+            if (calibrator == null)
+                UnityEngine.Debug.LogWarning("KeyboardHighlighter: Could not find UnityGazeCalibrator!");
+        }
+        
+        if (gazeSource == null)
+        {
+            gazeSource = FindObjectOfType<GazeWebSocketClient>();
+            if (gazeSource == null)
+                UnityEngine.Debug.LogWarning("KeyboardHighlighter: Could not find GazeWebSocketClient!");
+        }
+        
         if (keyboardPanel != null)
         {
             CollectKeyboardButtons();
@@ -62,6 +77,17 @@ public class KeyboardHighlighter : MonoBehaviour
     
     void Update()
     {
+        // Try to find references if they're missing (in case scene switched)
+        if (calibrator == null)
+        {
+            calibrator = FindObjectOfType<UnityGazeCalibrator>();
+        }
+        
+        if (gazeSource == null)
+        {
+            gazeSource = FindObjectOfType<GazeWebSocketClient>();
+        }
+        
         //skip automatic highlighting if highlighting is disabled or external highlight is active
         if (!highlightingEnabled || externalHighlightActive)
         {
@@ -74,6 +100,12 @@ public class KeyboardHighlighter : MonoBehaviour
         }
         
         Vector2 gazePosition = GetGazePosition();
+        
+        // Debug logging (occasionally)
+        if (Time.frameCount % 120 == 0) // Every ~2 seconds at 60fps
+        {
+            UnityEngine.Debug.Log($"KeyboardHighlighter: gazePosition=({gazePosition.x:F1}, {gazePosition.y:F1}), calibrated={(calibrator != null && calibrator.calibrated)}, buttons={keyboardButtons.Count}");
+        }
         
         Button nearestButton = FindNearestButton(gazePosition);
         
