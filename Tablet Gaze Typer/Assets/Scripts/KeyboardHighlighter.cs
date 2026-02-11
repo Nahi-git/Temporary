@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using TMPro;
 
 public class KeyboardHighlighter : MonoBehaviour
 {
@@ -26,6 +27,22 @@ public class KeyboardHighlighter : MonoBehaviour
     private bool highlightingEnabled = true;
     private List<Button> poppedOutButtons = new List<Button>();
     public Button CurrentlyHighlightedButton => currentlyHighlightedButton;
+    
+    public string GetNearestKeyLabel()
+    {
+        if (currentlyHighlightedButton == null) return "";
+        return GetButtonLabel(currentlyHighlightedButton);
+    }
+    
+    static string GetButtonLabel(Button button)
+    {
+        if (button == null) return "";
+        var tmp = button.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        if (tmp != null && !string.IsNullOrEmpty(tmp.text)) return tmp.text.Trim();
+        var text = button.GetComponentInChildren<UnityEngine.UI.Text>();
+        if (text != null && !string.IsNullOrEmpty(text.text)) return text.text.Trim();
+        return "";
+    }
     
     void Start()
     {

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <script src="https://cdn.jsdelivr.net/npm/webgazer@latest/dist/webgazer.js"></script>
 </head>
-<body style="margin:0;background:black">
+<body style="margin:0;background:white">
 
 <script>
 const socket = new WebSocket("ws://localhost:8765");
@@ -49,7 +49,7 @@ function createCalibratorUI() {
   dot.style.width = "28px";
   dot.style.height = "28px";
   dot.style.borderRadius = "9999px";
-  dot.style.background = "white";
+  dot.style.background = "green";
   dot.style.boxShadow = "0 0 0 6px rgba(255,255,255,0.25)";
   dot.style.transform = "translate(-50%, -50%)";
 

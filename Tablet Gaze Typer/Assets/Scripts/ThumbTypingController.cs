@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 
 public class ThumbTypingController : MonoBehaviour
 {
+    public static event System.Action<string> OnCharacterTyped;
     [Header("References")]
     public KeyboardHighlighter keyboardHighlighter;
     public GameObject keyboardPanel;
@@ -790,6 +791,35 @@ public class ThumbTypingController : MonoBehaviour
         }
     }
     
+    public string GetCenterKeyLabel()
+    {
+        return centerKeyButton != null ? GetRawButtonText(centerKeyButton) : "";
+    }
+    
+    public string GetSelectedKeyLabel()
+    {
+        return selectedKey != null ? GetRawButtonText(selectedKey) : "";
+    }
+    
+    public Vector2 GetCenterGridScreenPosition()
+    {
+        if (surroundingKeysPanel == null || !surroundingKeysPanel.activeSelf)
+        {
+            return Vector2.zero;
+        }
+        RectTransform panelRect = surroundingKeysPanel.GetComponent<RectTransform>();
+        if (panelRect == null) return Vector2.zero;
+        Canvas canvas = keyboardPanel != null ? keyboardPanel.GetComponentInParent<Canvas>() : null;
+        if (canvas == null) return Vector2.zero;
+        Camera cam = (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace) ? canvas.worldCamera : null;
+        return RectTransformUtility.WorldToScreenPoint(cam, panelRect.position);
+    }
+    
+    public bool IsTiltOn()
+    {
+        return !Mathf.Approximately(currentGridRotationZ, 0f);
+    }
+    
     void TypeSelectedKey()
     {
         if (selectedKey == null)
@@ -873,12 +903,14 @@ public class ThumbTypingController : MonoBehaviour
                     targetInputField.text = targetInputField.text.Substring(0, targetInputField.text.Length - 1);
                     targetInputField.caretPosition = targetInputField.text.Length;
                 }
+                OnCharacterTyped?.Invoke("");
                 UnityEngine.Debug.Log($"Backspace pressed");
             }
             else if (!string.IsNullOrEmpty(processedText))
             {
                 targetInputField.text += processedText;
                 targetInputField.caretPosition = targetInputField.text.Length;
+                OnCharacterTyped?.Invoke(processedText);
                 UnityEngine.Debug.Log($"Typed: {displayText} -> '{processedText}'");
             }
         }
@@ -898,12 +930,14 @@ public class ThumbTypingController : MonoBehaviour
                             inputField.text = inputField.text.Substring(0, inputField.text.Length - 1);
                             inputField.caretPosition = inputField.text.Length;
                         }
+                        OnCharacterTyped?.Invoke("");
                         UnityEngine.Debug.Log($"Backspace pressed");
                     }
                     else if (!string.IsNullOrEmpty(processedText))
                     {
                         inputField.text += processedText;
                         inputField.caretPosition = inputField.text.Length;
+                        OnCharacterTyped?.Invoke(processedText);
                         UnityEngine.Debug.Log($"Typed: {displayText} -> '{processedText}'");
                     }
                 }
