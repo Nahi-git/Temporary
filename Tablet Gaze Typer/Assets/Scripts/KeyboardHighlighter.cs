@@ -16,9 +16,8 @@ public class KeyboardHighlighter : MonoBehaviour
     public Color popoutColor = new Color(0.6f, 0.85f, 1f, 1f);
     public Color normalColor = Color.white;
     [Header("Dimming (thumb 3x3)")]
-    [Tooltip("Brightness multiplier for keys outside the 3x3 when thumb controller is active. Lower = darker / less selectable.")]
-    [Range(0.1f, 1f)]
-    public float nonSelectableDimFactor = 0.35f;  
+    [Tooltip("Color for keys outside the 3x3 when thumb controller is active. Use a light grey for subtle dimming without strong contrast.")]
+    public Color nonSelectableKeyColor = new Color(0.9f, 0.9f, 0.9f, 1f);  
     
     private List<Button> keyboardButtons = new List<Button>();
     private Button currentlyHighlightedButton = null;
@@ -289,15 +288,14 @@ public class KeyboardHighlighter : MonoBehaviour
                 poppedOutButtons.Add(b);
             }
         }
-        //make all other keys dimmed 
+        //make all other keys use the non-selectable color (light grey by default)
         foreach (Button b in keyboardButtons)
         {
             if (b == null || poppedOutButtons.Contains(b)) continue;
             Image img = b.GetComponent<Image>();
             if (img != null)
             {
-                Color orig = originalColors.TryGetValue(b, out Color c) ? c : normalColor;
-                img.color = new Color(orig.r * nonSelectableDimFactor, orig.g * nonSelectableDimFactor, orig.b * nonSelectableDimFactor, orig.a);
+                img.color = nonSelectableKeyColor;
             }
         }
         currentlyHighlightedButton = selectedButton;

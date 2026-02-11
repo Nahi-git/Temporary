@@ -524,6 +524,7 @@ public class ThumbTypingController : MonoBehaviour
         panelImage.color = new Color(0, 0, 0, 0.3f);
         
         surroundingKeysPanel = panel;
+        surroundingKeysPanel.SetActive(false); // hidden until user holds in bottom-right corner
     }
     
     void CreateSurroundingKeyVisuals(Dictionary<Vector2Int, Button> gridMap, Button centerButton, bool wideSpaceBottom, bool punctPlusSpaceBottom)
