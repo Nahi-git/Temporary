@@ -8,7 +8,11 @@ public class KeyboardHighlighter : MonoBehaviour
     [Header("References")]
     public UnityGazeCalibrator calibrator;
     public GazeWebSocketClient gazeSource;
-    public GameObject keyboardPanel; 
+    public GameObject keyboardPanel;
+
+    [Header("Gaze Only scene")]
+    [Tooltip("Enable to keep highlighting the key under gaze during typing.")]
+    public bool highlightDuringTyping = false;
     
     [Header("Highlight Settings")]
     public Color highlightColor = new Color(1f, 0.8f, 0f, 1f); 
@@ -16,8 +20,8 @@ public class KeyboardHighlighter : MonoBehaviour
     public Color popoutColor = new Color(0.6f, 0.85f, 1f, 1f);
     public Color normalColor = Color.white;
     [Header("Dimming (thumb 3x3)")]
-    [Tooltip("Color for keys outside the 3x3 when thumb controller is active. Use a light grey for subtle dimming without strong contrast.")]
-    public Color nonSelectableKeyColor = new Color(0.9f, 0.9f, 0.9f, 1f);  
+    [Tooltip("Color for keys outside the 3x3 when thumb controller is active.")]
+    public Color nonSelectableKeyColor = new Color(0.9f, 0.9f, 0.9f, 1f);
     
     private List<Button> keyboardButtons = new List<Button>();
     private Button currentlyHighlightedButton = null;
@@ -49,14 +53,14 @@ public class KeyboardHighlighter : MonoBehaviour
     {
         if (calibrator == null)
         {
-            calibrator = FindObjectOfType<UnityGazeCalibrator>();
+            calibrator = FindFirstObjectByType<UnityGazeCalibrator>();
             if (calibrator == null)
                 UnityEngine.Debug.LogWarning("KeyboardHighlighter: Could not find UnityGazeCalibrator!");
         }
         
         if (gazeSource == null)
         {
-            gazeSource = FindObjectOfType<GazeWebSocketClient>();
+            gazeSource = FindFirstObjectByType<GazeWebSocketClient>();
             if (gazeSource == null)
                 UnityEngine.Debug.LogWarning("KeyboardHighlighter: Could not find GazeWebSocketClient!");
         }
@@ -96,12 +100,12 @@ public class KeyboardHighlighter : MonoBehaviour
     {
         if (calibrator == null)
         {
-            calibrator = FindObjectOfType<UnityGazeCalibrator>();
+            calibrator = FindFirstObjectByType<UnityGazeCalibrator>();
         }
         
         if (gazeSource == null)
         {
-            gazeSource = FindObjectOfType<GazeWebSocketClient>();
+            gazeSource = FindFirstObjectByType<GazeWebSocketClient>();
         }
         
         //skip automatic highlighting if highlighting is disabled or external highlight is active
@@ -110,8 +114,8 @@ public class KeyboardHighlighter : MonoBehaviour
             return;
         }
         
-        var typing = FindObjectOfType<SentenceTypingPractice>();
-        if (typing != null && typing.State == SentenceTypingPractice.PracticeState.Typing)
+        var typing = FindFirstObjectByType<SentenceTypingPractice>();
+        if (typing != null && typing.State == SentenceTypingPractice.PracticeState.Typing && !highlightDuringTyping)
         {
             if (currentlyHighlightedButton != null)
             {

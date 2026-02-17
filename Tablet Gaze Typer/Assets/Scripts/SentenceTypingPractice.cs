@@ -24,6 +24,9 @@ public class SentenceTypingPractice : MonoBehaviour
     [Tooltip("Optional: Keyboard panel to disable during countdown.")]
     public GameObject keyboardPanel;
     
+    [Tooltip("Optional: Button or panel to show when typing is complete (e.g. 'Go to Gaze Only'). Hidden at start and during countdown/typing.")]
+    public GameObject buttonToShowWhenComplete;
+    
     [Header("Sentence Settings")]
     [Tooltip("The sentence the user should type")]
     [TextArea(2, 5)]
@@ -146,6 +149,8 @@ public class SentenceTypingPractice : MonoBehaviour
             resultDisplay.text = "";
             resultDisplay.gameObject.SetActive(false);
         }
+        if (buttonToShowWhenComplete != null)
+            buttonToShowWhenComplete.SetActive(false);
     }
     
     void BeginCountdown()
@@ -161,6 +166,8 @@ public class SentenceTypingPractice : MonoBehaviour
         {
             keyboardPanel.SetActive(false);
         }
+        if (buttonToShowWhenComplete != null)
+            buttonToShowWhenComplete.SetActive(false);
         if (countdownCoroutine != null)
         {
             StopCoroutine(countdownCoroutine);
@@ -189,9 +196,24 @@ public class SentenceTypingPractice : MonoBehaviour
         }
         
         countdownCoroutine = null;
+        StartTypingState();
+    }
+
+    //prevents countdown from running again between sentences
+    public void StartTypingAgain()
+    {
+        if (countdownCoroutine != null)
+        {
+            StopCoroutine(countdownCoroutine);
+            countdownCoroutine = null;
+        }
+        StartTypingState();
+    }
+
+    void StartTypingState()
+    {
         state = PracticeState.Typing;
         typingStartTime = Time.time;
-        
         if (targetInputField != null)
         {
             targetInputField.interactable = true;
@@ -270,6 +292,8 @@ public class SentenceTypingPractice : MonoBehaviour
             resultDisplay.gameObject.SetActive(true);
             resultDisplay.text = "Time: " + timeText;
         }
+        if (buttonToShowWhenComplete != null)
+            buttonToShowWhenComplete.SetActive(true);
         UnityEngine.Debug.Log($"SentenceTypingPractice: Completed in {timeText}");
     }
     

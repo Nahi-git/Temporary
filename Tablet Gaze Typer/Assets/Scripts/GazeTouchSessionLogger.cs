@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System;
 using System.IO;
 using System.Text;
 
@@ -8,6 +9,8 @@ public class GazeTouchSessionLogger : MonoBehaviour
 {
     [Header("References")]
     public SentenceTypingPractice sentenceTypingPractice;
+    [Tooltip("Optional. If set, SentenceId is written to CSV for each row.")]
+    public SentenceSessionManager sentenceSessionManager;
     public UnityGazeCalibrator gazeCalibrator;
     public GazeWebSocketClient gazeSource;
     public KeyboardHighlighter keyboardHighlighter;
@@ -16,6 +19,8 @@ public class GazeTouchSessionLogger : MonoBehaviour
     [Header("Output Location")]
     [Tooltip("Folder name for CSV files, next to the project README (outside the Unity project). Created if it doesn't exist.")]
     public string outputFolderName = "GazeTouchLogs";
+    [Tooltip("Name used in the CSV filename: 'Participant X {logFileNameSuffix}.csv'.")]
+    public string logFileNameSuffix = "GazeTouch";
     
     [Header("Participant")]
     [Tooltip("Participant number used in filename (Participant X GazeTouch.csv). Can be set manually or loaded from PlayerPrefs.")]
@@ -36,10 +41,13 @@ public class GazeTouchSessionLogger : MonoBehaviour
     private string _snapshotSelectedKeyLabel = "";
     private Vector2 _snapshotGaze;
     private string _snapshotGazeNearestKey = "";
+    private bool _snapshotTouchOn;
+    private Vector2 _snapshotTouchPosition;
     
     void Start()
     {
         if (sentenceTypingPractice == null) sentenceTypingPractice = FindObjectOfType<SentenceTypingPractice>();
+        if (sentenceSessionManager == null) sentenceSessionManager = FindObjectOfType<SentenceSessionManager>();
         if (gazeCalibrator == null) gazeCalibrator = FindObjectOfType<UnityGazeCalibrator>();
         if (gazeSource == null) gazeSource = FindObjectOfType<GazeWebSocketClient>();
         if (keyboardHighlighter == null) keyboardHighlighter = FindObjectOfType<KeyboardHighlighter>();
@@ -79,6 +87,27 @@ public class GazeTouchSessionLogger : MonoBehaviour
         }
         _snapshotGaze = GetGazeCoords();
         _snapshotGazeNearestKey = keyboardHighlighter != null ? keyboardHighlighter.GetNearestKeyLabel() : "";
+        CaptureTouchPositionAtType(out _snapshotTouchOn, out _snapshotTouchPosition);
+    }
+    
+    //because we capture frame by frame, we need to capture the touch position at the exact moment the key is typed in case the input was too fast
+    void CaptureTouchPositionAtType(out bool touchOn, out Vector2 position)
+    {
+        position = Vector2.zero;
+        touchOn = false;
+        var touchscreen = Touchscreen.current;
+        if (touchscreen != null && touchscreen.touches.Count > 0)
+        {
+            position = touchscreen.touches[0].position.ReadValue();
+            touchOn = true;
+            return;
+        }
+        var mouse = Mouse.current;
+        if (mouse != null)
+        {
+            position = mouse.position.ReadValue();
+            touchOn = true;
+        }
     }
     
     void Update()
@@ -95,6 +124,7 @@ public class GazeTouchSessionLogger : MonoBehaviour
         }
         else if (_loggingActive && sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Complete)
         {
+            WriteFrameRow(); //should fix issue where the last frame is not logged
             StopLogging();
         }
         
@@ -128,13 +158,15 @@ public class GazeTouchSessionLogger : MonoBehaviour
             return;
         }
         
-        string fileName = $"Participant {participantNumber} GazeTouch.csv";
+        string suffix = string.IsNullOrEmpty(logFileNameSuffix) ? "GazeTouch" : logFileNameSuffix;
+        string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
+        string fileName = $"Participant {participantNumber} {suffix} {dateTime}.csv";
         string path = Path.Combine(folder, fileName);
         
         try
         {
             _writer = new StreamWriter(path, false, Encoding.UTF8);
-            _writer.WriteLine("Time,GazeX,GazeY,GazeNearestKey,TouchOn,TouchX,TouchY,CenterGridX,CenterGridY,TiltOn,CenterKeyLabel,SelectedKeyLabel,CharacterToBeTyped,TypeFlag,CharacterTyped");
+            _writer.WriteLine("Time,SentenceId,GazeX,GazeY,GazeNearestKey,TouchOn,TouchX,TouchY,CenterGridX,CenterGridY,TiltOn,CenterKeyLabel,SelectedKeyLabel,CharacterToBeTyped,TypeFlag,CharacterTyped");
             _writer.Flush();
             _loggingActive = true;
             UnityEngine.Debug.Log($"GazeTouchSessionLogger: Started logging to {path}");
@@ -150,7 +182,17 @@ public class GazeTouchSessionLogger : MonoBehaviour
         if (_writer == null || !_loggingActive) return;
         
         float time = sentenceTypingPractice != null ? sentenceTypingPractice.GetTypingElapsedTime() : 0f;
-        bool touchOn = GetTouchOn(out Vector2 touchPos);
+        bool touchOn;
+        Vector2 touchPos;
+        if (_typedThisFrame && _hasSnapshotAtType)
+        {
+            touchOn = _snapshotTouchOn;
+            touchPos = _snapshotTouchPosition;
+        }
+        else
+        {
+            touchOn = GetTouchOn(out touchPos);
+        }
         int typeFlag = _typedThisFrame ? 1 : 0;
         string characterTyped = EscapeCsv(_characterTypedThisFrame);
         string characterToBeTyped = (typeFlag == 1 && !string.IsNullOrEmpty(_characterTypedThisFrame))
@@ -188,8 +230,9 @@ public class GazeTouchSessionLogger : MonoBehaviour
         centerKeyLabel = EscapeCsv(centerKeyLabel);
         selectedKeyLabel = EscapeCsv(selectedKeyLabel);
         characterToBeTyped = EscapeCsv(characterToBeTyped);
-        
-        _writer.WriteLine($"{time:F3},{gaze.x:F2},{gaze.y:F2},{gazeNearestKey},{(touchOn ? 1 : 0)},{touchPos.x:F2},{touchPos.y:F2},{centerGrid.x:F2},{centerGrid.y:F2},{(tiltOn ? 1 : 0)},{centerKeyLabel},{selectedKeyLabel},{characterToBeTyped},{typeFlag},{characterTyped}");
+        int sentenceId = sentenceSessionManager != null ? sentenceSessionManager.CurrentSentenceId : 0;
+
+        _writer.WriteLine($"{time:F3},{sentenceId},{gaze.x:F2},{gaze.y:F2},{gazeNearestKey},{(touchOn ? 1 : 0)},{touchPos.x:F2},{touchPos.y:F2},{centerGrid.x:F2},{centerGrid.y:F2},{(tiltOn ? 1 : 0)},{centerKeyLabel},{selectedKeyLabel},{characterToBeTyped},{typeFlag},{characterTyped}");
         _writer.Flush();
     }
     

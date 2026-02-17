@@ -8,6 +8,8 @@ using UnityEngine.InputSystem;
 public class ThumbTypingController : MonoBehaviour
 {
     public static event System.Action<string> OnCharacterTyped;
+    public static void NotifyCharacterTyped(string character) => OnCharacterTyped?.Invoke(character);
+
     [Header("References")]
     public KeyboardHighlighter keyboardHighlighter;
     public GameObject keyboardPanel;
