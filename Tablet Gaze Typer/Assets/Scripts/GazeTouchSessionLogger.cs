@@ -151,9 +151,11 @@ public class GazeTouchSessionLogger : MonoBehaviour
         
         float time = sentenceTypingPractice != null ? sentenceTypingPractice.GetTypingElapsedTime() : 0f;
         bool touchOn = GetTouchOn(out Vector2 touchPos);
-        string characterToBeTyped = sentenceTypingPractice != null ? sentenceTypingPractice.GetCharacterToBeTyped() : "";
         int typeFlag = _typedThisFrame ? 1 : 0;
         string characterTyped = EscapeCsv(_characterTypedThisFrame);
+        string characterToBeTyped = (typeFlag == 1 && !string.IsNullOrEmpty(_characterTypedThisFrame))
+            ? _characterTypedThisFrame
+            : (sentenceTypingPractice != null ? sentenceTypingPractice.GetCharacterToBeTyped() : "");
         
         Vector2 gaze;
         string gazeNearestKey;

@@ -29,8 +29,10 @@ public class KeyboardHighlighter : MonoBehaviour
     
     public string GetNearestKeyLabel()
     {
-        if (currentlyHighlightedButton == null) return "";
-        return GetButtonLabel(currentlyHighlightedButton);
+        if (keyboardPanel == null || !keyboardPanel.activeSelf || keyboardButtons.Count == 0) return "";
+        Vector2 gaze = GetGazePosition();
+        Button nearest = FindNearestButton(gaze);
+        return GetButtonLabel(nearest);
     }
     
     static string GetButtonLabel(Button button)
@@ -45,7 +47,6 @@ public class KeyboardHighlighter : MonoBehaviour
     
     void Start()
     {
-        // Auto-find references if not assigned
         if (calibrator == null)
         {
             calibrator = FindObjectOfType<UnityGazeCalibrator>();
@@ -93,7 +94,6 @@ public class KeyboardHighlighter : MonoBehaviour
     
     void Update()
     {
-        // Try to find references if they're missing (in case scene switched)
         if (calibrator == null)
         {
             calibrator = FindObjectOfType<UnityGazeCalibrator>();
@@ -107,6 +107,17 @@ public class KeyboardHighlighter : MonoBehaviour
         //skip automatic highlighting if highlighting is disabled or external highlight is active
         if (!highlightingEnabled || externalHighlightActive)
         {
+            return;
+        }
+        
+        var typing = FindObjectOfType<SentenceTypingPractice>();
+        if (typing != null && typing.State == SentenceTypingPractice.PracticeState.Typing)
+        {
+            if (currentlyHighlightedButton != null)
+            {
+                UnhighlightButton(currentlyHighlightedButton);
+                currentlyHighlightedButton = null;
+            }
             return;
         }
         

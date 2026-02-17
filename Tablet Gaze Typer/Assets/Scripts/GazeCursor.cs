@@ -12,7 +12,7 @@ public class GazeCursor : MonoBehaviour
     
     RectTransform rt;
     private bool wasCalibrated = false;
-    private bool isVisible = true;
+    private bool isVisible = false; // Hidden by default
 
     void Start()
     {
@@ -51,15 +51,23 @@ public class GazeCursor : MonoBehaviour
         return isVisible;
     }
     
+    //users should not see the gaze cursor when typing, as it is distracting
     private void UpdateVisibility()
     {
+        bool shouldShow = isVisible;
+        var typing = FindObjectOfType<SentenceTypingPractice>();
+        if (typing != null && typing.State == SentenceTypingPractice.PracticeState.Typing)
+        {
+            shouldShow = false;
+        }
+        
         if (cursorImage != null)
         {
-            cursorImage.enabled = isVisible;
+            cursorImage.enabled = shouldShow;
         }
         else if (rt != null)
         {
-            rt.gameObject.SetActive(isVisible);
+            rt.gameObject.SetActive(shouldShow);
         }
     }
 
@@ -81,6 +89,8 @@ public class GazeCursor : MonoBehaviour
         {
             calibrator = FindObjectOfType<UnityGazeCalibrator>();
         }
+        
+        UpdateVisibility();
 
         // Use calibrated gaze if available, otherwise use raw gaze
         Vector2 gazePosition;

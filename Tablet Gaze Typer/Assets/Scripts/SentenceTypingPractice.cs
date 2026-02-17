@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections.Generic;
 using System.Text;
 using System.Collections;
 
@@ -42,8 +43,18 @@ public class SentenceTypingPractice : MonoBehaviour
     [Tooltip("Color for the current letter to type (optional highlight)")]
     public Color currentLetterColor = Color.yellow;
     
+    [Tooltip("Color for current space (shown as a block). Use alpha for transparency.")]
+    public Color currentSpaceColor = new Color(1f, 1f, 0f, 0.5f);
+    
+    [Tooltip("Color for incorrectly typed letters")]
+    public Color wrongColor = Color.red;
+    
+    [Tooltip("Color for incorrect space (shown as a block). Use alpha for transparency.")]
+    public Color wrongSpaceColor = new Color(1f, 0f, 0f, 0.5f);
+    
     private string originalSentence;
     private int currentIndex = 0;
+    private List<bool> characterCorrectness = new List<bool>();
     private StringBuilder coloredText;
     private string previousInputText = "";
     private bool isProcessingInput = false;
@@ -85,8 +96,15 @@ public class SentenceTypingPractice : MonoBehaviour
         {
             keyboardPanel = GameObject.Find("KeyboardPanel");
         }
+        EnsureSentenceDisplayUniformSize();
         InitializeSentence();
         BeginCountdown();
+    }
+    
+    void EnsureSentenceDisplayUniformSize()
+    {
+        if (sentenceDisplay == null) return;
+        sentenceDisplay.enableAutoSizing = false;
     }
     
     void OnEnable()
@@ -109,6 +127,7 @@ public class SentenceTypingPractice : MonoBehaviour
     {
         originalSentence = targetSentence;
         currentIndex = 0;
+        characterCorrectness.Clear();
         previousInputText = "";
         
         if (sentenceDisplay != null)
@@ -223,15 +242,12 @@ public class SentenceTypingPractice : MonoBehaviour
             {
                 isMatch = newChar == expectedChar;
             }
-            
-            if (isMatch)
+            characterCorrectness.Add(isMatch);
+            currentIndex++;
+            UpdateSentenceDisplay();
+            if (currentIndex >= originalSentence.Length)
             {
-                currentIndex++;
-                UpdateSentenceDisplay();
-                if (currentIndex >= originalSentence.Length)
-                {
-                    OnTypingComplete();
-                }
+                OnTypingComplete();
             }
         }
         previousInputText = newText;
@@ -270,19 +286,17 @@ public class SentenceTypingPractice : MonoBehaviour
     
     void RecalculateProgress()
     {
+        characterCorrectness.Clear();
         currentIndex = 0;
         if (targetInputField == null || string.IsNullOrEmpty(previousInputText))
         {
             return;
         }
-        
         int minLength = Mathf.Min(previousInputText.Length, originalSentence.Length);
-        
         for (int i = 0; i < minLength; i++)
         {
             char typedChar = previousInputText[i];
             char expectedChar = originalSentence[i];
-            
             bool isMatch = false;
             if (char.IsLetter(typedChar) && char.IsLetter(expectedChar))
             {
@@ -292,15 +306,8 @@ public class SentenceTypingPractice : MonoBehaviour
             {
                 isMatch = typedChar == expectedChar;
             }
-            
-            if (isMatch)
-            {
-                currentIndex = i + 1;
-            }
-            else
-            {
-                break;
-            }
+            characterCorrectness.Add(isMatch);
+            currentIndex = i + 1;
         }
     }
     
@@ -321,11 +328,30 @@ public class SentenceTypingPractice : MonoBehaviour
             
             if (i < currentIndex)
             {
-                coloredText.Append($"<color=#{ColorUtility.ToHtmlStringRGB(correctColor)}>{charStr}</color>");
+                bool correct = i < characterCorrectness.Count && characterCorrectness[i];
+                if (correct)
+                {
+                    coloredText.Append($"<color=#{ColorUtility.ToHtmlStringRGB(correctColor)}>{charStr}</color>");
+                }
+                else if (c == ' ')
+                {
+                    coloredText.Append($"<color=#{ColorUtility.ToHtmlStringRGBA(wrongSpaceColor)}>\u2588</color>");
+                }
+                else
+                {
+                    coloredText.Append($"<color=#{ColorUtility.ToHtmlStringRGB(wrongColor)}>{charStr}</color>");
+                }
             }
             else if (i == currentIndex)
             {
-                coloredText.Append($"<color=#{ColorUtility.ToHtmlStringRGB(currentLetterColor)}>{charStr}</color>");
+                if (c == ' ')
+                {
+                    coloredText.Append($"<color=#{ColorUtility.ToHtmlStringRGBA(currentSpaceColor)}>\u2588</color>");
+                }
+                else
+                {
+                    coloredText.Append($"<color=#{ColorUtility.ToHtmlStringRGB(currentLetterColor)}>{charStr}</color>");
+                }
             }
             else
             {

@@ -11,7 +11,11 @@ public class GazeWebSocketClient : MonoBehaviour
     public Vector2 rawGaze;
     
     [Header("Browser Window Info")]
-    public Vector2 browserWindowSize = Vector2.zero; 
+    public Vector2 browserWindowSize = Vector2.zero;
+    
+    [Header("Camera Feed")]
+    public Texture2D cameraTexture;
+    public System.Action<Texture2D> OnCameraFrameReceived; 
     
     WebSocket ws;
     private bool isConnecting = false;
@@ -71,8 +75,44 @@ public class GazeWebSocketClient : MonoBehaviour
             {
                 var json = Encoding.UTF8.GetString(bytes);
                 
+                //check if this is a camera frame message
+                if (json.Contains("\"type\"") && json.Contains("cameraFrame"))
+                {
+                    try
+                    {
+                        var frameData = JsonUtility.FromJson<CameraFrameData>(json);
+                        if (!string.IsNullOrEmpty(frameData.data))
+                        {
+                            //decode base64 image data
+                            string base64Data = frameData.data;
+                            if (base64Data.StartsWith("data:image"))
+                            {
+                                //remove data URL prefix
+                                int commaIndex = base64Data.IndexOf(',');
+                                if (commaIndex >= 0)
+                                {
+                                    base64Data = base64Data.Substring(commaIndex + 1);
+                                }
+                            }
+                            
+                            byte[] imageBytes = System.Convert.FromBase64String(base64Data);
+                            if (cameraTexture == null)
+                            {
+                                cameraTexture = new Texture2D(2, 2);
+                            }
+                            if (cameraTexture.LoadImage(imageBytes))
+                            {
+                                OnCameraFrameReceived?.Invoke(cameraTexture);
+                            }
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        UnityEngine.Debug.LogWarning($"Failed to parse camera frame: {ex.Message}");
+                    }
+                }
                 //check if this is a window size message
-                if (json.Contains("\"type\"") && json.Contains("windowSize"))
+                else if (json.Contains("\"type\"") && json.Contains("windowSize"))
                 {
                     try
                     {
@@ -150,5 +190,11 @@ public class GazeWebSocketClient : MonoBehaviour
         public string type; 
         public float width; 
         public float height; 
+    }
+    
+    [System.Serializable]
+    class CameraFrameData {
+        public string type;
+        public string data;
     }
 }

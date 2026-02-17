@@ -13,6 +13,11 @@ let latest = null;
 let isCalibrating = false;
 let calibrateBtn = null;
 let calibrationHint = null;
+let videoElement = null;
+let canvas = null;
+let ctx = null;
+let frameCaptureInterval = null;
+const FRAME_CAPTURE_FPS = 10;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -214,6 +219,51 @@ async function autoCalibrateWebGazer() {
   overlay.remove();
 }
 
+// make sure the video element is found and then start capturing frames from it
+// this is so users can see if their face is out of frame or not
+function setupVideoCapture() {
+  setTimeout(() => {
+    const videos = document.querySelectorAll('video');
+    if (videos.length > 0) {
+      videoElement = videos[0];
+      console.log('Found video element for capture');
+      canvas = document.createElement('canvas');
+      canvas.width = 320;
+      canvas.height = 240;
+      ctx = canvas.getContext('2d');
+      startFrameCapture();
+    } else {
+      console.warn('Video element not found, retrying...');
+      setTimeout(setupVideoCapture, 1000);
+    }
+  }, 2000);
+}
+
+//start capturing frames from the video element
+function startFrameCapture() {
+  if (!videoElement || !canvas || !ctx) return;
+  
+  const captureInterval = 1000 / FRAME_CAPTURE_FPS;
+  
+  frameCaptureInterval = setInterval(() => {
+    if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA && socket.readyState === 1) {
+      try {
+        //jpeg compression is used to reduce the size of the image data for faster transmission
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/jpeg', 0.7); 
+        socket.send(JSON.stringify({
+          type: "cameraFrame",
+          data: imageData
+        }));
+      } catch (e) {
+        console.warn('Frame capture error:', e);
+      }
+    }
+  }, captureInterval);
+  
+  console.log('Started camera frame capture');
+}
+
 webgazer
   .saveDataAcrossSessions(false)
   .showPredictionPoints(true)
@@ -229,6 +279,7 @@ webgazer
     console.log('WebGazer initialized');
     webgazer.showFaceFeedbackBox(true);
     calibrateBtn = createCalibrationButton();
+    setupVideoCapture();
   })
   .catch(function(err) {
     console.error('WebGazer error:', err);
@@ -242,6 +293,16 @@ socket.onopen = () => {
     height: window.innerHeight 
   }));
   console.log('WebSocket connected');
+  if (videoElement && !frameCaptureInterval) {
+    startFrameCapture();
+  }
+};
+
+socket.onclose = () => {
+  if (frameCaptureInterval) {
+    clearInterval(frameCaptureInterval);
+    frameCaptureInterval = null;
+  }
 };
 
 setInterval(() => {
