@@ -15,6 +15,8 @@ public class SentenceSessionManager : MonoBehaviour
     [Header("Settings")]
     [Tooltip("Resource name of the sentences file (no extension). Must be in Resources folder.")]
     public string sentencesResourceName = "Sentences";
+    [Tooltip("Text shown when all sentences are done.")]
+    public string endOfSessionText = "End of Gaze + Touch";
 
     public struct SentenceEntry
     {
@@ -165,7 +167,7 @@ public class SentenceSessionManager : MonoBehaviour
 
         if (_sessionEnded)
         {
-            progressDisplay.text = "End of Gaze + Touch";
+            progressDisplay.text = string.IsNullOrEmpty(endOfSessionText) ? "End of session" : endOfSessionText;
             progressDisplay.gameObject.SetActive(true);
             return;
         }

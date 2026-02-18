@@ -5311,6 +5311,7 @@ MonoBehaviour:
   sentenceTypingPractice: {fileID: 1338139259}
   progressDisplay: {fileID: 879575136}
   sentencesResourceName: Sentences
+  endOfSessionText: End of Gaze Only
 --- !u!4 &1043887819
 Transform:
   m_ObjectHideFlags: 0
@@ -6602,7 +6603,7 @@ MonoBehaviour:
   countdownDisplay: {fileID: 879575136}
   resultDisplay: {fileID: 0}
   keyboardPanel: {fileID: 0}
-  buttonToShowWhenComplete: {fileID: 0}
+  buttonToShowWhenComplete: {fileID: 1446850618}
   targetSentence: The quick brown fox jumps over the lazy dog
   countdownSeconds: 10
   correctColor: {r: 0, g: 1, b: 0, a: 1}
