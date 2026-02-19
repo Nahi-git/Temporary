@@ -17,6 +17,8 @@ public class SentenceSessionManager : MonoBehaviour
     public string sentencesResourceName = "Sentences";
     [Tooltip("Text shown when all sentences are done.")]
     public string endOfSessionText = "End of Gaze + Touch";
+    [Tooltip("After this many sentences, run the countdown again")]
+    public int breakEveryNSentences = 10;
 
     public struct SentenceEntry
     {
@@ -87,20 +89,40 @@ public class SentenceSessionManager : MonoBehaviour
             {
                 _sessionEnded = true;
                 EndSession();
-                Debug.Log("SentenceSessionManager: Session complete. All 40 sentences finished.");
+                Debug.Log("SentenceSessionManager: Session complete. All sentences finished.");
                 return;
             }
 
-            SentenceEntry next = _shuffledOrder[_currentIndex];
-            sentenceTypingPractice.SetNewSentence(next.Text);
-            sentenceTypingPractice.StartTypingAgain();
-            _lastFrameWasComplete = false;
-            UpdateProgressDisplay();
+            bool shouldBreak = breakEveryNSentences > 0 &&
+                              (_currentIndex % breakEveryNSentences == 0) &&
+                              _currentIndex < _shuffledOrder.Count;
+
+            if (shouldBreak)
+            {
+                SentenceEntry next = _shuffledOrder[_currentIndex];
+                sentenceTypingPractice.SetNewSentence(next.Text);
+                sentenceTypingPractice.BeginCountdown();
+                UpdateProgressDisplay();
+                _lastFrameWasComplete = false;
+                return;
+            }
+
+            AdvanceToNextSentence();
         }
         else if (!isComplete)
         {
             _lastFrameWasComplete = false;
         }
+    }
+
+    void AdvanceToNextSentence()
+    {
+        if (_currentIndex < 0 || _currentIndex >= _shuffledOrder.Count) return;
+        SentenceEntry next = _shuffledOrder[_currentIndex];
+        sentenceTypingPractice.SetNewSentence(next.Text);
+        sentenceTypingPractice.StartTypingAgain();
+        _lastFrameWasComplete = false;
+        UpdateProgressDisplay();
     }
 
     static List<SentenceEntry> LoadSentences()

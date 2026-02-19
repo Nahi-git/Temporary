@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 public class SceneHotkeyLoader : MonoBehaviour
 {
-    [Tooltip("Scene to load when the first hotkey is pressed (must be in Build Settings).")]
+    [Tooltip("Scene to load when the first hotkey is pressed.")]
     public string sceneToLoad = "Gaze Only";
     [Tooltip("Load the scene when this key is pressed.")]
     public Key hotkey = Key.X;
@@ -14,10 +14,25 @@ public class SceneHotkeyLoader : MonoBehaviour
     [Tooltip("Load the second scene when this key is pressed.")]
     public Key hotkey2 = Key.Z;
 
-    [Tooltip("Scene to load when the third hotkey is pressed (e.g. Touch Only).")]
+    [Tooltip("Scene to load when the third hotkey is pressed.")]
     public string sceneToLoad3 = "Touch Only";
     [Tooltip("Load the third scene when this key is pressed.")]
     public Key hotkey3 = Key.V;
+
+    [Tooltip("Scene to load when the fourth hotkey is pressed.")]
+    public string sceneToLoad4 = "Gaze Only DEMO";
+    [Tooltip("Load the fourth scene when this key is pressed.")]
+    public Key hotkey4 = Key.S;
+
+    [Tooltip("Scene to load when the fifth hotkey is pressed.")]
+    public string sceneToLoad5 = "Gaze Touch DEMO";
+    [Tooltip("Load the fifth scene when this key is pressed.")]
+    public Key hotkey5 = Key.A;
+
+    [Tooltip("Scene to load when the sixth hotkey is pressed.")]
+    public string sceneToLoad6 = "Touch Only DEMO";
+    [Tooltip("Load the sixth scene when this key is pressed.")]
+    public Key hotkey6 = Key.D;
 
     void Update()
     {
@@ -36,6 +51,21 @@ public class SceneHotkeyLoader : MonoBehaviour
         if (!string.IsNullOrEmpty(sceneToLoad3) && Keyboard.current[hotkey3].wasPressedThisFrame)
         {
             SceneManager.LoadScene(sceneToLoad3);
+            return;
+        }
+        if (!string.IsNullOrEmpty(sceneToLoad4) && Keyboard.current[hotkey4].wasPressedThisFrame)
+        {
+            SceneManager.LoadScene(sceneToLoad4);
+            return;
+        }
+        if (!string.IsNullOrEmpty(sceneToLoad5) && Keyboard.current[hotkey5].wasPressedThisFrame)
+        {
+            SceneManager.LoadScene(sceneToLoad5);
+            return;
+        }
+        if (!string.IsNullOrEmpty(sceneToLoad6) && Keyboard.current[hotkey6].wasPressedThisFrame)
+        {
+            SceneManager.LoadScene(sceneToLoad6);
         }
     }
 }

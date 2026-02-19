@@ -32,11 +32,11 @@ public class GazeTouchSessionLogger : MonoBehaviour
     private bool _typedThisFrame;
     private string _characterTypedThisFrame = "";
     private bool _loggingActive;
+    private float _loggingStartTime;
     
     //for when a key is typed, we want to log the data at that exactmoment
     private bool _hasSnapshotAtType;
     private Vector2 _snapshotCenterGrid;
-    private bool _snapshotTiltOn;
     private string _snapshotCenterKeyLabel = "";
     private string _snapshotSelectedKeyLabel = "";
     private Vector2 _snapshotGaze;
@@ -74,14 +74,12 @@ public class GazeTouchSessionLogger : MonoBehaviour
         if (thumbTypingController != null)
         {
             _snapshotCenterGrid = thumbTypingController.GetCenterGridScreenPosition();
-            _snapshotTiltOn = thumbTypingController.IsTiltOn();
             _snapshotCenterKeyLabel = thumbTypingController.GetCenterKeyLabel();
             _snapshotSelectedKeyLabel = thumbTypingController.GetSelectedKeyLabel();
         }
         else
         {
             _snapshotCenterGrid = Vector2.zero;
-            _snapshotTiltOn = false;
             _snapshotCenterKeyLabel = "";
             _snapshotSelectedKeyLabel = "";
         }
@@ -121,6 +119,10 @@ public class GazeTouchSessionLogger : MonoBehaviour
                 StartLogging();
             }
             WriteFrameRow();
+        }
+        else if (_loggingActive && sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Countdown)
+        {
+            WriteFrameRow(); //we want to log the frames during the countdown as well
         }
         else if (_loggingActive && sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Complete)
         {
@@ -166,9 +168,10 @@ public class GazeTouchSessionLogger : MonoBehaviour
         try
         {
             _writer = new StreamWriter(path, false, Encoding.UTF8);
-            _writer.WriteLine("Time,SentenceId,GazeX,GazeY,GazeNearestKey,TouchOn,TouchX,TouchY,CenterGridX,CenterGridY,TiltOn,CenterKeyLabel,SelectedKeyLabel,CharacterToBeTyped,TypeFlag,CharacterTyped");
+            _writer.WriteLine("Time,SentenceId,GazeX,GazeY,GazeNearestKey,TouchOn,TouchX,TouchY,CenterGridX,CenterGridY,CenterKeyLabel,SelectedKeyLabel,CharacterToBeTyped,TypeFlag,CharacterTyped,InBreak");
             _writer.Flush();
             _loggingActive = true;
+            _loggingStartTime = Time.time;
             UnityEngine.Debug.Log($"GazeTouchSessionLogger: Started logging to {path}");
         }
         catch (System.Exception e)
@@ -181,7 +184,7 @@ public class GazeTouchSessionLogger : MonoBehaviour
     {
         if (_writer == null || !_loggingActive) return;
         
-        float time = sentenceTypingPractice != null ? sentenceTypingPractice.GetTypingElapsedTime() : 0f;
+        float time = _loggingActive ? Time.time - _loggingStartTime : 0f;
         bool touchOn;
         Vector2 touchPos;
         if (_typedThisFrame && _hasSnapshotAtType)
@@ -202,7 +205,6 @@ public class GazeTouchSessionLogger : MonoBehaviour
         Vector2 gaze;
         string gazeNearestKey;
         Vector2 centerGrid;
-        bool tiltOn;
         string centerKeyLabel;
         string selectedKeyLabel;
         
@@ -211,7 +213,6 @@ public class GazeTouchSessionLogger : MonoBehaviour
             gaze = _snapshotGaze;
             gazeNearestKey = _snapshotGazeNearestKey;
             centerGrid = _snapshotCenterGrid;
-            tiltOn = _snapshotTiltOn;
             centerKeyLabel = _snapshotCenterKeyLabel;
             selectedKeyLabel = _snapshotSelectedKeyLabel;
             _hasSnapshotAtType = false;
@@ -221,7 +222,6 @@ public class GazeTouchSessionLogger : MonoBehaviour
             gaze = GetGazeCoords();
             gazeNearestKey = keyboardHighlighter != null ? keyboardHighlighter.GetNearestKeyLabel() : "";
             centerGrid = thumbTypingController != null ? thumbTypingController.GetCenterGridScreenPosition() : Vector2.zero;
-            tiltOn = thumbTypingController != null && thumbTypingController.IsTiltOn();
             centerKeyLabel = thumbTypingController != null ? thumbTypingController.GetCenterKeyLabel() : "";
             selectedKeyLabel = thumbTypingController != null ? thumbTypingController.GetSelectedKeyLabel() : "";
         }
@@ -231,8 +231,10 @@ public class GazeTouchSessionLogger : MonoBehaviour
         selectedKeyLabel = EscapeCsv(selectedKeyLabel);
         characterToBeTyped = EscapeCsv(characterToBeTyped);
         int sentenceId = sentenceSessionManager != null ? sentenceSessionManager.CurrentSentenceId : 0;
+        bool inCountdown = sentenceTypingPractice != null && sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Countdown;
+        int inBreak = (inCountdown && typeFlag == 0) ? 1 : 0;
 
-        _writer.WriteLine($"{time:F3},{sentenceId},{gaze.x:F2},{gaze.y:F2},{gazeNearestKey},{(touchOn ? 1 : 0)},{touchPos.x:F2},{touchPos.y:F2},{centerGrid.x:F2},{centerGrid.y:F2},{(tiltOn ? 1 : 0)},{centerKeyLabel},{selectedKeyLabel},{characterToBeTyped},{typeFlag},{characterTyped}");
+        _writer.WriteLine($"{time:F3},{sentenceId},{gaze.x:F2},{gaze.y:F2},{gazeNearestKey},{(touchOn ? 1 : 0)},{touchPos.x:F2},{touchPos.y:F2},{centerGrid.x:F2},{centerGrid.y:F2},{centerKeyLabel},{selectedKeyLabel},{characterToBeTyped},{typeFlag},{characterTyped},{inBreak}");
         _writer.Flush();
     }
     

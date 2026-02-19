@@ -3,6 +3,8 @@ using UnityEngine.UI;
 
 public class CameraFeedDisplay : MonoBehaviour
 {
+    public enum FaceGuideShape { Oval, Square }
+
     [Header("References")]
     [Tooltip("RawImage component to display the camera feed. If not assigned, will try to find it automatically.")]
     public RawImage cameraFeedImage;
@@ -16,8 +18,22 @@ public class CameraFeedDisplay : MonoBehaviour
     
     [Tooltip("Position offset from top left corner")]
     public Vector2 offsetFromCorner = new Vector2(20, 20);
+
+    [Header("Face guide (center overlay)")]
+    [Tooltip("Show a guide in the center so users can keep their face in frame. Oval matches face shape better.")]
+    public bool showFaceGuide = true;
+    public FaceGuideShape faceGuideShape = FaceGuideShape.Oval;
+    [Tooltip("Size of the guide as a fraction of the feed (e.g. 0.5 = half width/height).")]
+    [Range(0.2f, 0.95f)]
+    public float faceGuideSizeFraction = 0.5f;
+    [Tooltip("Color of the guide outline.")]
+    public Color faceGuideColor = Color.white;
+    [Tooltip("Outline thickness in pixels on the guide texture.")]
+    [Range(1, 6)]
+    public int faceGuideLineWidth = 2;
     
     private RectTransform rectTransform;
+    private GameObject faceGuideObject;
     
     void Start()
     {
@@ -44,6 +60,8 @@ public class CameraFeedDisplay : MonoBehaviour
         if (rectTransform != null)
         {
             SetupRectTransform();
+            if (showFaceGuide)
+                CreateFaceGuide();
         }
         
         //subscribe to camera frame updates
@@ -87,6 +105,71 @@ public class CameraFeedDisplay : MonoBehaviour
         {
             rectTransform.SetAsLastSibling();
         }
+    }
+
+    void CreateFaceGuide()
+    {
+        if (rectTransform == null || faceGuideObject != null) return;
+
+        faceGuideObject = new GameObject("FaceGuide");
+        faceGuideObject.transform.SetParent(rectTransform, false);
+
+        RectTransform guideRect = faceGuideObject.AddComponent<RectTransform>();
+        guideRect.anchorMin = new Vector2(0.5f, 0.5f);
+        guideRect.anchorMax = new Vector2(0.5f, 0.5f);
+        guideRect.pivot = new Vector2(0.5f, 0.5f);
+        guideRect.anchoredPosition = Vector2.zero;
+        float w = feedSize.x * faceGuideSizeFraction;
+        float h = feedSize.y * faceGuideSizeFraction;
+        guideRect.sizeDelta = new Vector2(w, h);
+
+        Image img = faceGuideObject.AddComponent<Image>();
+        img.sprite = CreateGuideSprite();
+        img.color = faceGuideColor;
+        img.raycastTarget = false;
+        guideRect.localEulerAngles = new Vector3(0f, 0f, 90f);
+    }
+
+    Sprite CreateGuideSprite()
+    {
+        int texSize = 128;
+        Texture2D tex = new Texture2D(texSize, texSize);
+        tex.filterMode = FilterMode.Bilinear;
+        Color clear = new Color(0, 0, 0, 0);
+        float cx = (texSize - 1) * 0.5f;
+        float cy = (texSize - 1) * 0.5f;
+        float rx = (texSize - 1) * 0.5f;
+        float ry = (texSize - 1) * 0.5f;
+        float lw = Mathf.Max(1, faceGuideLineWidth);
+
+        for (int y = 0; y < texSize; y++)
+        {
+            for (int x = 0; x < texSize; x++)
+            {
+                bool onBorder = false;
+                if (faceGuideShape == FaceGuideShape.Oval)
+                {
+                    float nx = (rx > 0) ? (x - cx) / rx : 0;
+                    float ny = (ry > 0) ? (y - cy) / ry : 0;
+                    float ellipseR = Mathf.Sqrt(nx * nx + ny * ny);
+                    float tol = (lw + 0.5f) / Mathf.Min(rx, ry);
+                    if (Mathf.Abs(ellipseR - 1f) <= tol)
+                        onBorder = true;
+                }
+                else
+                {
+                    float px = Mathf.Abs(x - cx);
+                    float py = Mathf.Abs(y - cy);
+                    bool inOuter = px <= rx && py <= ry;
+                    bool inInner = px <= rx - lw && py <= ry - lw;
+                    onBorder = inOuter && !inInner;
+                }
+                tex.SetPixel(x, y, onBorder ? Color.white : clear);
+            }
+        }
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, texSize, texSize), new Vector2(0.5f, 0.5f));
     }
     
     void OnCameraFrameReceived(Texture2D texture)

@@ -153,7 +153,7 @@ public class SentenceTypingPractice : MonoBehaviour
             buttonToShowWhenComplete.SetActive(false);
     }
     
-    void BeginCountdown()
+    public void BeginCountdown()
     {
         state = PracticeState.Countdown;
         if (targetInputField != null)

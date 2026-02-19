@@ -13,6 +13,8 @@ public class KeyboardHighlighter : MonoBehaviour
     [Header("Gaze Only scene")]
     [Tooltip("Enable to keep highlighting the key under gaze during typing.")]
     public bool highlightDuringTyping = false;
+    [Tooltip("If true, never highlight the key under gaze. Used For DEMOS to prevent highlighting the key under gaze during typing.")]
+    public bool disableGazeHighlighting = false;
     
     [Header("Highlight Settings")]
     public Color highlightColor = new Color(1f, 0.8f, 0f, 1f); 
@@ -73,6 +75,8 @@ public class KeyboardHighlighter : MonoBehaviour
         {
             UnityEngine.Debug.LogWarning("KeyboardHighlighter: KeyboardPanel not assigned!");
         }
+        if (disableGazeHighlighting)
+            highlightingEnabled = false;
     }
     
     void CollectKeyboardButtons()

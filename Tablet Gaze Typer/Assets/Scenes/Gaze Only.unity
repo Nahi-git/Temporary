@@ -5313,6 +5313,7 @@ MonoBehaviour:
   progressDisplay: {fileID: 879575136}
   sentencesResourceName: Sentences
   endOfSessionText: End of Gaze Only
+  breakEveryNSentences: 10
 --- !u!4 &1043887819
 Transform:
   m_ObjectHideFlags: 0
@@ -8260,6 +8261,11 @@ MonoBehaviour:
   gazeClient: {fileID: 0}
   feedSize: {x: 320, y: 240}
   offsetFromCorner: {x: 20, y: 20}
+  showFaceGuide: 1
+  faceGuideShape: 0
+  faceGuideSizeFraction: 0.5
+  faceGuideColor: {r: 0, g: 1, b: 0.036186934, a: 1}
+  faceGuideLineWidth: 2
 --- !u!1 &1539269683
 GameObject:
   m_ObjectHideFlags: 0
