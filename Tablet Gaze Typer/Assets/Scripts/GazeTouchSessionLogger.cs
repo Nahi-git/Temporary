@@ -43,6 +43,8 @@ public class GazeTouchSessionLogger : MonoBehaviour
     private string _snapshotGazeNearestKey = "";
     private bool _snapshotTouchOn;
     private Vector2 _snapshotTouchPosition;
+    private bool _snapshotThreeByThreeDisplayed;
+    private bool _snapshotCorrectKeyInThreeByThree;
     
     void Start()
     {
@@ -83,9 +85,16 @@ public class GazeTouchSessionLogger : MonoBehaviour
             _snapshotCenterKeyLabel = "";
             _snapshotSelectedKeyLabel = "";
         }
-        _snapshotGaze = GetGazeCoords();
+        _snapshotGaze = ConvertGazeToUnityScreenSpace(GetGazeCoords());
         _snapshotGazeNearestKey = keyboardHighlighter != null ? keyboardHighlighter.GetNearestKeyLabel() : "";
         CaptureTouchPositionAtType(out _snapshotTouchOn, out _snapshotTouchPosition);
+        
+        // Capture 3x3 state
+        // Check if the character that was JUST TYPED is in the 3x3 grid (not the next character to be typed)
+        string characterJustTyped = _characterTypedThisFrame ?? "";
+        _snapshotThreeByThreeDisplayed = thumbTypingController != null ? thumbTypingController.IsThreeByThreeDisplayed() : false;
+        _snapshotCorrectKeyInThreeByThree = thumbTypingController != null && _snapshotThreeByThreeDisplayed 
+            ? thumbTypingController.IsCharacterInThreeByThree(characterJustTyped) : false;
     }
     
     //because we capture frame by frame, we need to capture the touch position at the exact moment the key is typed in case the input was too fast
@@ -168,7 +177,7 @@ public class GazeTouchSessionLogger : MonoBehaviour
         try
         {
             _writer = new StreamWriter(path, false, Encoding.UTF8);
-            _writer.WriteLine("Time,SentenceId,GazeX,GazeY,GazeNearestKey,TouchOn,TouchX,TouchY,CenterGridX,CenterGridY,CenterKeyLabel,SelectedKeyLabel,CharacterToBeTyped,TypeFlag,CharacterTyped,InBreak");
+            _writer.WriteLine("Time,SentenceId,GazeX,GazeY,GazeNearestKey,TouchOn,TouchX,TouchY,CenterGridX,CenterGridY,CenterKeyLabel,SelectedKeyLabel,CharacterToBeTyped,TypeFlag,CharacterTyped,InBreak,ThreeByThreeDisplayed,CorrectKeyInThreeByThree");
             _writer.Flush();
             _loggingActive = true;
             _loggingStartTime = Time.time;
@@ -207,6 +216,8 @@ public class GazeTouchSessionLogger : MonoBehaviour
         Vector2 centerGrid;
         string centerKeyLabel;
         string selectedKeyLabel;
+        bool threeByThreeDisplayed;
+        bool correctKeyInThreeByThree;
         
         if (_typedThisFrame && _hasSnapshotAtType)
         {
@@ -215,15 +226,20 @@ public class GazeTouchSessionLogger : MonoBehaviour
             centerGrid = _snapshotCenterGrid;
             centerKeyLabel = _snapshotCenterKeyLabel;
             selectedKeyLabel = _snapshotSelectedKeyLabel;
+            threeByThreeDisplayed = _snapshotThreeByThreeDisplayed;
+            correctKeyInThreeByThree = _snapshotCorrectKeyInThreeByThree;
             _hasSnapshotAtType = false;
         }
         else
         {
-            gaze = GetGazeCoords();
+            gaze = ConvertGazeToUnityScreenSpace(GetGazeCoords());
             gazeNearestKey = keyboardHighlighter != null ? keyboardHighlighter.GetNearestKeyLabel() : "";
             centerGrid = thumbTypingController != null ? thumbTypingController.GetCenterGridScreenPosition() : Vector2.zero;
             centerKeyLabel = thumbTypingController != null ? thumbTypingController.GetCenterKeyLabel() : "";
             selectedKeyLabel = thumbTypingController != null ? thumbTypingController.GetSelectedKeyLabel() : "";
+            threeByThreeDisplayed = thumbTypingController != null ? thumbTypingController.IsThreeByThreeDisplayed() : false;
+            correctKeyInThreeByThree = thumbTypingController != null && threeByThreeDisplayed 
+                ? thumbTypingController.IsCharacterInThreeByThree(characterToBeTyped) : false;
         }
         
         gazeNearestKey = EscapeCsv(gazeNearestKey);
@@ -234,7 +250,7 @@ public class GazeTouchSessionLogger : MonoBehaviour
         bool inCountdown = sentenceTypingPractice != null && sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Countdown;
         int inBreak = (inCountdown && typeFlag == 0) ? 1 : 0;
 
-        _writer.WriteLine($"{time:F3},{sentenceId},{gaze.x:F2},{gaze.y:F2},{gazeNearestKey},{(touchOn ? 1 : 0)},{touchPos.x:F2},{touchPos.y:F2},{centerGrid.x:F2},{centerGrid.y:F2},{centerKeyLabel},{selectedKeyLabel},{characterToBeTyped},{typeFlag},{characterTyped},{inBreak}");
+        _writer.WriteLine($"{time:F3},{sentenceId},{gaze.x:F2},{gaze.y:F2},{gazeNearestKey},{(touchOn ? 1 : 0)},{touchPos.x:F2},{touchPos.y:F2},{centerGrid.x:F2},{centerGrid.y:F2},{centerKeyLabel},{selectedKeyLabel},{characterToBeTyped},{typeFlag},{characterTyped},{inBreak},{(threeByThreeDisplayed ? 1 : 0)},{(correctKeyInThreeByThree ? 1 : 0)}");
         _writer.Flush();
     }
     
@@ -265,6 +281,14 @@ public class GazeTouchSessionLogger : MonoBehaviour
             return gazeSource.rawGaze;
         }
         return Vector2.zero;
+    }
+    
+    //due to gaze implementation, the gaze coordinates are in the top-left corner of the screen
+    //we need to convert them to the bottom-left corner of the screen to be comparable to the touch coordinates
+    Vector2 ConvertGazeToUnityScreenSpace(Vector2 gaze)
+    {
+        if (gaze == Vector2.zero) return Vector2.zero;
+        return new Vector2(gaze.x, Screen.height - gaze.y);
     }
     
     bool GetTouchOn(out Vector2 position)

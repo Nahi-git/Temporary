@@ -796,12 +796,64 @@ public class ThumbTypingController : MonoBehaviour
     
     public string GetCenterKeyLabel()
     {
-        return centerKeyButton != null ? GetRawButtonText(centerKeyButton) : "";
+        if (centerKeyButton == null) return "";
+        
+        // Check button name first for special keys (space, backspace)
+        if (centerKeyButton.gameObject != null)
+        {
+            string buttonName = centerKeyButton.gameObject.name.ToLower();
+            if (buttonName.Contains("space"))
+                return " ";
+            if (buttonName.Contains("backspace"))
+                return "";
+        }
+        
+        // Otherwise get the button text
+        string text = GetRawButtonText(centerKeyButton);
+        // If text is empty or whitespace-only, return it as-is (might be space)
+        if (string.IsNullOrEmpty(text))
+        {
+            // Check if it's actually space by looking at original text
+            if (originalButtonTexts.ContainsKey(centerKeyButton))
+            {
+                string originalText = originalButtonTexts[centerKeyButton];
+                if (originalText == " " || (string.IsNullOrWhiteSpace(originalText) && centerKeyButton.gameObject != null && centerKeyButton.gameObject.name.ToLower().Contains("space")))
+                    return " ";
+            }
+            return "";
+        }
+        return text;
     }
     
     public string GetSelectedKeyLabel()
     {
-        return selectedKey != null ? GetRawButtonText(selectedKey) : "";
+        if (selectedKey == null) return "";
+        
+        // Check button name first for special keys (space, backspace)
+        if (selectedKey.gameObject != null)
+        {
+            string buttonName = selectedKey.gameObject.name.ToLower();
+            if (buttonName.Contains("space"))
+                return " ";
+            if (buttonName.Contains("backspace"))
+                return "";
+        }
+        
+        // Otherwise get the button text
+        string text = GetRawButtonText(selectedKey);
+        // If text is empty or whitespace-only, return it as-is (might be space)
+        if (string.IsNullOrEmpty(text))
+        {
+            // Check if it's actually space by looking at original text
+            if (originalButtonTexts.ContainsKey(selectedKey))
+            {
+                string originalText = originalButtonTexts[selectedKey];
+                if (originalText == " " || (string.IsNullOrWhiteSpace(originalText) && selectedKey.gameObject != null && selectedKey.gameObject.name.ToLower().Contains("space")))
+                    return " ";
+            }
+            return "";
+        }
+        return text;
     }
     
     public Vector2 GetCenterGridScreenPosition()
@@ -821,6 +873,71 @@ public class ThumbTypingController : MonoBehaviour
     public bool IsTiltOn()
     {
         return !Mathf.Approximately(currentGridRotationZ, 0f);
+    }
+    
+    public bool IsThreeByThreeDisplayed()
+    {
+        return surroundingKeysPanel != null && surroundingKeysPanel.activeSelf;
+    }
+    
+    public bool IsCharacterInThreeByThree(string character)
+    {
+        if (string.IsNullOrEmpty(character)) return false;
+        if (!IsThreeByThreeDisplayed()) return false;
+        if (keyObjectToButtonMap == null || keyObjectToButtonMap.Count == 0) return false;
+        
+        // Check for space BEFORE trimming (since Trim() removes spaces)
+        bool isSpace = character == " " || character.Trim() == "";
+        
+        // Normalize the character for comparison (lowercase, trimmed)
+        // But preserve space character
+        string normalizedChar = isSpace ? " " : character.Trim().ToLower();
+        
+        // Check all buttons in the 3x3 grid
+        foreach (var kvp in keyObjectToButtonMap)
+        {
+            Button button = kvp.Value;
+            if (button == null) continue;
+            
+            // Check button name FIRST (before checking text, since space button might have empty text)
+            if (button.gameObject != null)
+            {
+                string buttonName = button.gameObject.name.ToLower();
+                if (buttonName.Contains("space") && isSpace)
+                    return true;
+                if (buttonName.Contains("backspace") && normalizedChar == "")
+                    return true;
+            }
+            
+            string buttonText = GetRawButtonText(button);
+            // Skip empty text only if it's not a space button (we already checked name above)
+            if (string.IsNullOrEmpty(buttonText))
+            {
+                // If we're looking for space and button name contains space, it's a match
+                if (isSpace && button.gameObject != null && button.gameObject.name.ToLower().Contains("space"))
+                    return true;
+                continue;
+            }
+            
+            // Normalize button text for comparison (but preserve space)
+            bool buttonIsSpace = buttonText == " " || buttonText.Trim() == "";
+            string normalizedButtonText = buttonIsSpace ? " " : buttonText.Trim().ToLower();
+            
+            // Handle special cases
+            if (normalizedButtonText == " " && normalizedChar == " ")
+                return true;
+            if (normalizedButtonText == "" && normalizedChar == "")
+                return true; // backspace/empty
+            
+            // For single characters, compare directly
+            if (normalizedButtonText.Length == 1 && normalizedChar.Length == 1)
+            {
+                if (normalizedButtonText == normalizedChar)
+                    return true;
+            }
+        }
+        
+        return false;
     }
     
     void TypeSelectedKey()
