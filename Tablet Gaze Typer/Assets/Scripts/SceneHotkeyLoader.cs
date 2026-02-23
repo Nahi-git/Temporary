@@ -7,32 +7,32 @@ public class SceneHotkeyLoader : MonoBehaviour
     [Tooltip("Scene to load when the first hotkey is pressed.")]
     public string sceneToLoad = "Gaze Only";
     [Tooltip("Load the scene when this key is pressed.")]
-    public Key hotkey = Key.X;
+    public Key hotkey = Key.S;
 
     [Tooltip("Scene to load when the second hotkey is pressed.")]
     public string sceneToLoad2 = "Gaze Touch";
     [Tooltip("Load the second scene when this key is pressed.")]
-    public Key hotkey2 = Key.Z;
+    public Key hotkey2 = Key.A;
 
     [Tooltip("Scene to load when the third hotkey is pressed.")]
     public string sceneToLoad3 = "Touch Only";
     [Tooltip("Load the third scene when this key is pressed.")]
-    public Key hotkey3 = Key.V;
+    public Key hotkey3 = Key.D;
 
     [Tooltip("Scene to load when the fourth hotkey is pressed.")]
     public string sceneToLoad4 = "Gaze Only DEMO";
     [Tooltip("Load the fourth scene when this key is pressed.")]
-    public Key hotkey4 = Key.S;
+    public Key hotkey4 = Key.W;
 
     [Tooltip("Scene to load when the fifth hotkey is pressed.")]
     public string sceneToLoad5 = "Gaze Touch DEMO";
     [Tooltip("Load the fifth scene when this key is pressed.")]
-    public Key hotkey5 = Key.A;
+    public Key hotkey5 = Key.Q;
 
     [Tooltip("Scene to load when the sixth hotkey is pressed.")]
     public string sceneToLoad6 = "Touch Only DEMO";
     [Tooltip("Load the sixth scene when this key is pressed.")]
-    public Key hotkey6 = Key.D;
+    public Key hotkey6 = Key.E;
 
     void Update()
     {

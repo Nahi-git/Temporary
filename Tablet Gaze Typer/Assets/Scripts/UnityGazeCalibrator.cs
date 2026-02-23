@@ -34,7 +34,9 @@ public class UnityGazeCalibrator : MonoBehaviour
     public TextMeshProUGUI instructionText;
     public GameObject keyboardPanel;
     [Tooltip("Button or panel to show after calibration (e.g. 'Go to Gaze Typer'). Assign and it will be shown when calibration completes.")]
-    public GameObject postCalibrationButton;          
+    public GameObject postCalibrationButton;
+    [Tooltip("Optional text to show after calibration with scene hotkey instructions. If unset, will try to find 'PostCalibrationInstructions' or create one at runtime.")]
+    public TextMeshProUGUI postCalibrationInstructionsText;
 
     [Header("Calibration Settings")]
     public float marginPx = 120f;          
@@ -143,6 +145,7 @@ public class UnityGazeCalibrator : MonoBehaviour
         HideKeyboard();
         HideInstructionText();
         HidePostCalibrationButton();
+        HidePostCalibrationInstructions();
         LoadCalibrationData();
         if (!isCalibrating && calibrationDot != null)
         {
@@ -421,16 +424,67 @@ public class UnityGazeCalibrator : MonoBehaviour
             instructionText.gameObject.SetActive(false);
     }
 
+    const string POST_CALIBRATION_INSTRUCTIONS = "GazeTouch DEMO: Press Q\nGazeOnly DEMO: Press W\nTouchOnly DEMO: Press E\nGazeTouch: Press A\nGazeOnly: Press S\nTouchOnly: Press D";
+
     void ShowPostCalibrationButton()
     {
         if (postCalibrationButton != null)
             postCalibrationButton.SetActive(true);
+        EnsurePostCalibrationInstructions();
+        if (postCalibrationInstructionsText != null)
+        {
+            postCalibrationInstructionsText.text = POST_CALIBRATION_INSTRUCTIONS;
+            postCalibrationInstructionsText.gameObject.SetActive(true);
+        }
     }
 
     void HidePostCalibrationButton()
     {
         if (postCalibrationButton != null)
             postCalibrationButton.SetActive(false);
+        HidePostCalibrationInstructions();
+    }
+
+    void HidePostCalibrationInstructions()
+    {
+        if (postCalibrationInstructionsText != null)
+            postCalibrationInstructionsText.gameObject.SetActive(false);
+    }
+
+    void EnsurePostCalibrationInstructions()
+    {
+        if (postCalibrationInstructionsText != null) return;
+        GameObject go = GameObject.Find("PostCalibrationInstructions");
+        if (go != null)
+        {
+            postCalibrationInstructionsText = go.GetComponent<TextMeshProUGUI>();
+            if (postCalibrationInstructionsText == null)
+                postCalibrationInstructionsText = go.AddComponent<TextMeshProUGUI>();
+        }
+        if (postCalibrationInstructionsText == null && calibrationDot != null)
+        {
+            Canvas canvas = calibrationDot.GetComponentInParent<Canvas>();
+            if (canvas != null)
+            {
+                GameObject textGo = new GameObject("PostCalibrationInstructions");
+                textGo.transform.SetParent(canvas.transform, false);
+                postCalibrationInstructionsText = textGo.AddComponent<TextMeshProUGUI>();
+                postCalibrationInstructionsText.text = POST_CALIBRATION_INSTRUCTIONS;
+                postCalibrationInstructionsText.fontSize = 28;
+                postCalibrationInstructionsText.color = Color.white;
+                postCalibrationInstructionsText.alignment = TMPro.TextAlignmentOptions.Center;
+                if (instructionText != null && instructionText.font != null)
+                    postCalibrationInstructionsText.font = instructionText.font;
+                RectTransform rt = textGo.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.anchorMin = new Vector2(0.5f, 0.5f);
+                    rt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rt.anchoredPosition = new Vector2(0, 140);
+                    rt.sizeDelta = new Vector2(800, 220);
+                }
+            }
+        }
     }
 
     //call this when switching scenes to update UI references
@@ -464,7 +518,12 @@ public class UnityGazeCalibrator : MonoBehaviour
                 instructionText = textObj.GetComponent<TextMeshProUGUI>();
             }
         }
-        
+        if (postCalibrationInstructionsText == null)
+        {
+            GameObject instructionsObj = GameObject.Find("PostCalibrationInstructions");
+            if (instructionsObj != null)
+                postCalibrationInstructionsText = instructionsObj.GetComponent<TextMeshProUGUI>();
+        }
         if (keyboardPanel == null)
         {
             keyboardPanel = GameObject.Find("KeyboardPanel");

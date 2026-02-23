@@ -5739,7 +5739,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1434627522}
-  - component: {fileID: 1434627521}
+  - component: {fileID: 1434627523}
   m_Layer: 0
   m_Name: SceneSwitcher
   m_TagString: Untagged
@@ -5747,30 +5747,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1434627521
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1434627520}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f1edfdea795dd4e42865ae43488e38db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SceneHotkeyLoader
-  sceneToLoad: Gaze Only
-  hotkey: 38
-  sceneToLoad2: Gaze Touch
-  hotkey2: 40
-  sceneToLoad3: Touch Only
-  hotkey3: 36
-  sceneToLoad4: Gaze Only DEMO
-  hotkey4: 33
-  sceneToLoad5: Gaze Touch DEMO
-  hotkey5: 15
-  sceneToLoad6: Touch Only DEMO
-  hotkey6: 18
 --- !u!4 &1434627522
 Transform:
   m_ObjectHideFlags: 0
@@ -5786,6 +5762,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1434627523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1434627520}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1edfdea795dd4e42865ae43488e38db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneHotkeyLoader
+  sceneToLoad: Gaze Only
+  hotkey: 33
+  sceneToLoad2: Gaze Touch
+  hotkey2: 15
+  sceneToLoad3: Touch Only
+  hotkey3: 18
+  sceneToLoad4: Gaze Only DEMO
+  hotkey4: 37
+  sceneToLoad5: Gaze Touch DEMO
+  hotkey5: 31
+  sceneToLoad6: Touch Only DEMO
+  hotkey6: 19
 --- !u!1 &1452478171
 GameObject:
   m_ObjectHideFlags: 0

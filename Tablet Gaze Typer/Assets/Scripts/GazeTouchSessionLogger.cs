@@ -89,8 +89,7 @@ public class GazeTouchSessionLogger : MonoBehaviour
         _snapshotGazeNearestKey = keyboardHighlighter != null ? keyboardHighlighter.GetNearestKeyLabel() : "";
         CaptureTouchPositionAtType(out _snapshotTouchOn, out _snapshotTouchPosition);
         
-        // Capture 3x3 state
-        // Check if the character that was JUST TYPED is in the 3x3 grid (not the next character to be typed)
+        //check if the character that was just typed is in the 3x3 grid
         string characterJustTyped = _characterTypedThisFrame ?? "";
         _snapshotThreeByThreeDisplayed = thumbTypingController != null ? thumbTypingController.IsThreeByThreeDisplayed() : false;
         _snapshotCorrectKeyInThreeByThree = thumbTypingController != null && _snapshotThreeByThreeDisplayed 
