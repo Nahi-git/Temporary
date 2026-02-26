@@ -101,7 +101,7 @@ public class SentenceSessionManager : MonoBehaviour
             {
                 SentenceEntry next = _shuffledOrder[_currentIndex];
                 sentenceTypingPractice.SetNewSentence(next.Text);
-                sentenceTypingPractice.BeginCountdown();
+                sentenceTypingPractice.BeginBreak();
                 UpdateProgressDisplay();
                 _lastFrameWasComplete = false;
                 return;

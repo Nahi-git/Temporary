@@ -21,7 +21,9 @@ public class GazeTouchSessionLogger : MonoBehaviour
     public string outputFolderName = "GazeTouchLogs";
     [Tooltip("Name used in the CSV filename: 'Participant X {logFileNameSuffix}.csv'.")]
     public string logFileNameSuffix = "GazeTouch";
-    
+    [Header("Logging Rate")]
+    [Tooltip("Log frame rows at this rate (Hz). 90 = 90 times per second. Key presses and final frame are always logged immediately.")]
+    public float logRateHz = 90f;
     [Header("Participant")]
     [Tooltip("Participant number used in filename (Participant X GazeTouch.csv). Can be set manually or loaded from PlayerPrefs.")]
     public int participantNumber = 1;
@@ -29,6 +31,7 @@ public class GazeTouchSessionLogger : MonoBehaviour
     public string participantNumberPlayerPrefsKey = "GazeTouchParticipantNumber";
     
     private StreamWriter _writer;
+    private float _lastFrameLogTime = -1f;
     private bool _typedThisFrame;
     private string _characterTypedThisFrame = "";
     private bool _loggingActive;
@@ -119,18 +122,30 @@ public class GazeTouchSessionLogger : MonoBehaviour
     void Update()
     {
         if (sentenceTypingPractice == null) return;
-        
+
+        float interval = logRateHz > 0f ? 1f / logRateHz : 1f / 90f;
+        bool shouldLogThisFrame = false;
+
         if (sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Typing)
         {
             if (!_loggingActive)
             {
                 StartLogging();
             }
-            WriteFrameRow();
+            //log at 90 Hz or immediately when a key was typed
+            shouldLogThisFrame = _typedThisFrame || (Time.time - _lastFrameLogTime >= interval);
+            if (shouldLogThisFrame)
+                _lastFrameLogTime = Time.time;
+            if (shouldLogThisFrame)
+                WriteFrameRow();
         }
-        else if (_loggingActive && sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Countdown)
+        else if (_loggingActive && (sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Countdown || sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Break))
         {
-            WriteFrameRow(); //we want to log the frames during the countdown as well
+            shouldLogThisFrame = (Time.time - _lastFrameLogTime >= interval);
+            if (shouldLogThisFrame)
+                _lastFrameLogTime = Time.time;
+            if (shouldLogThisFrame)
+                WriteFrameRow();
         }
         else if (_loggingActive && sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Complete)
         {
@@ -247,7 +262,8 @@ public class GazeTouchSessionLogger : MonoBehaviour
         characterToBeTyped = EscapeCsv(characterToBeTyped);
         int sentenceId = sentenceSessionManager != null ? sentenceSessionManager.CurrentSentenceId : 0;
         bool inCountdown = sentenceTypingPractice != null && sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Countdown;
-        int inBreak = (inCountdown && typeFlag == 0) ? 1 : 0;
+        bool inBreakState = sentenceTypingPractice != null && sentenceTypingPractice.State == SentenceTypingPractice.PracticeState.Break;
+        int inBreak = (inCountdown || inBreakState) ? 1 : 0;
 
         _writer.WriteLine($"{time:F3},{sentenceId},{gaze.x:F2},{gaze.y:F2},{gazeNearestKey},{(touchOn ? 1 : 0)},{touchPos.x:F2},{touchPos.y:F2},{centerGrid.x:F2},{centerGrid.y:F2},{centerKeyLabel},{selectedKeyLabel},{characterToBeTyped},{typeFlag},{characterTyped},{inBreak},{(threeByThreeDisplayed ? 1 : 0)},{(correctKeyInThreeByThree ? 1 : 0)}");
         _writer.Flush();

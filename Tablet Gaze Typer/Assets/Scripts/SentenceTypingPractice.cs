@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using TMPro;
 using System.Collections.Generic;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Collections;
 
 public class SentenceTypingPractice : MonoBehaviour
 {
-    public enum PracticeState { Countdown, Typing, Complete }
+    public enum PracticeState { Countdown, Typing, Complete, Break }
     
     [Header("References")]
     [Tooltip("Text component that displays the sentence to type")]
@@ -68,6 +69,24 @@ public class SentenceTypingPractice : MonoBehaviour
     private Coroutine countdownCoroutine;
     public PracticeState State => state;
     
+    void Update()
+    {
+        if (state != PracticeState.Break) return;
+        if (!WasTapThisFrame()) return;
+        BeginCountdown();
+    }
+
+    static bool WasTapThisFrame()
+    {
+        var touchscreen = Touchscreen.current;
+        if (touchscreen != null && touchscreen.touches.Count > 0 && touchscreen.touches[0].press.wasPressedThisFrame)
+            return true;
+        var mouse = Mouse.current;
+        if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            return true;
+        return false;
+    }
+
     public float GetTypingElapsedTime()
     {
         if (state != PracticeState.Typing && state != PracticeState.Complete) return 0f;
@@ -153,6 +172,31 @@ public class SentenceTypingPractice : MonoBehaviour
             buttonToShowWhenComplete.SetActive(false);
     }
     
+    public void BeginBreak()
+    {
+        state = PracticeState.Break;
+        if (targetInputField != null)
+        {
+            targetInputField.interactable = false;
+            targetInputField.text = "";
+            previousInputText = "";
+        }
+        if (keyboardPanel != null)
+            keyboardPanel.SetActive(false);
+        if (buttonToShowWhenComplete != null)
+            buttonToShowWhenComplete.SetActive(false);
+        if (countdownCoroutine != null)
+        {
+            StopCoroutine(countdownCoroutine);
+            countdownCoroutine = null;
+        }
+        if (countdownDisplay != null)
+        {
+            countdownDisplay.gameObject.SetActive(true);
+            countdownDisplay.text = "BREAK";
+        }
+    }
+
     public void BeginCountdown()
     {
         state = PracticeState.Countdown;
