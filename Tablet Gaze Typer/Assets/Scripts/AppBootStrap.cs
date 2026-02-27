@@ -71,10 +71,11 @@ public class AppBootstrap : MonoBehaviour
         string backend = Path.Combine(projectRoot, "gaze-backend");
         string nodeExe = Path.Combine(backend, "node.exe");
 
+        string staticServerJs = Path.Combine(backend, "static-server.js");
         Process.Start(new ProcessStartInfo
         {
             FileName = nodeExe,
-            Arguments = "node_modules/http-server/bin/http-server . -p 8081",
+            Arguments = $"\"{staticServerJs}\"",
             WorkingDirectory = backend,
             UseShellExecute = false,
             CreateNoWindow = true
