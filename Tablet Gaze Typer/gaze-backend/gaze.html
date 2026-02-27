@@ -11,6 +11,11 @@
 const socket = new WebSocket("ws://localhost:8765");
 let latest = null;
 let isCalibrating = false;
+
+//gaze smoothing: exponential moving average (higher = more responsive, lower = smoother)
+const SMOOTH_ALPHA = 0.8;
+let smoothedX = null;
+let smoothedY = null;
 let calibrateBtn = null;
 let calibrationHint = null;
 let videoElement = null;
@@ -175,6 +180,8 @@ function getCalibrationPoints() {
 async function autoCalibrateWebGazer() {
   const { overlay, dot } = createCalibratorUI();
 
+  smoothedX = null;
+  smoothedY = null;
   //clear previous data cached
   try {
     if (typeof webgazer.clearData === "function") webgazer.clearData();
@@ -270,7 +277,16 @@ webgazer
   .setRegression("ridge")
   .setGazeListener(function(data) {
     if (data && data.x !== null && data.y !== null) {
-      latest = { x: data.x, y: data.y };
+      const x = data.x;
+      const y = data.y;
+      if (smoothedX === null || smoothedY === null) {
+        smoothedX = x;
+        smoothedY = y;
+      } else {
+        smoothedX = SMOOTH_ALPHA * x + (1 - SMOOTH_ALPHA) * smoothedX;
+        smoothedY = SMOOTH_ALPHA * y + (1 - SMOOTH_ALPHA) * smoothedY;
+      }
+      latest = { x: smoothedX, y: smoothedY };
       console.log('Gaze data:', latest); //debug log
     }
   })
