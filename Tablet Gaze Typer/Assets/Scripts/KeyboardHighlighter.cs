@@ -24,6 +24,12 @@ public class KeyboardHighlighter : MonoBehaviour
     [Header("Dimming (thumb 3x3)")]
     [Tooltip("Color for keys outside the 3x3 when thumb controller is active.")]
     public Color nonSelectableKeyColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+
+    [Header("Hysteresis")]
+    [Tooltip("Time (seconds) gaze must stay on a different key before highlight switches. Reduces flicker.")]
+    [SerializeField] private float switchDwellSeconds = 0.04f;
+    [Tooltip("If true, looking away from the keyboard resets the switch timer.")]
+    [SerializeField] private bool requireContinuousHit = false;
     
     private List<Button> keyboardButtons = new List<Button>();
     private Button currentlyHighlightedButton = null;
@@ -31,14 +37,16 @@ public class KeyboardHighlighter : MonoBehaviour
     private bool externalHighlightActive = false;
     private bool highlightingEnabled = true;
     private List<Button> poppedOutButtons = new List<Button>();
+    private Button pendingKeyButton = null;
+    private float pendingSince = 0f;
+    private bool hasPending = false;
     public Button CurrentlyHighlightedButton => currentlyHighlightedButton;
     
     public string GetNearestKeyLabel()
     {
         if (keyboardPanel == null || !keyboardPanel.activeSelf || keyboardButtons.Count == 0) return "";
-        Vector2 gaze = GetGazePosition();
-        Button nearest = FindNearestButton(gaze);
-        return GetButtonLabel(nearest);
+        Button stable = GetNearestButtonToGaze();
+        return GetButtonLabel(stable);
     }
     
     static string GetButtonLabel(Button button)
@@ -126,6 +134,8 @@ public class KeyboardHighlighter : MonoBehaviour
                 UnhighlightButton(currentlyHighlightedButton);
                 currentlyHighlightedButton = null;
             }
+            hasPending = false;
+            pendingKeyButton = null;
             return;
         }
         
@@ -142,20 +152,42 @@ public class KeyboardHighlighter : MonoBehaviour
             UnityEngine.Debug.Log($"KeyboardHighlighter: gazePosition=({gazePosition.x:F1}, {gazePosition.y:F1}), calibrated={(calibrator != null && calibrator.calibrated)}, buttons={keyboardButtons.Count}");
         }
         
-        Button nearestButton = FindNearestButton(gazePosition);
-        
-        if (nearestButton != currentlyHighlightedButton)
+        Button candidateButton = FindNearestButton(gazePosition);
+
+        if (candidateButton == null)
+        {
+            if (requireContinuousHit)
+            {
+                hasPending = false;
+                pendingKeyButton = null;
+            }
+            return;
+        }
+
+        if (candidateButton == currentlyHighlightedButton)
+        {
+            hasPending = false;
+            pendingKeyButton = null;
+            return;
+        }
+
+        if (!hasPending || pendingKeyButton != candidateButton)
+        {
+            hasPending = true;
+            pendingKeyButton = candidateButton;
+            pendingSince = Time.unscaledTime;
+        }
+
+        bool dwellMet = (Time.unscaledTime - pendingSince) >= switchDwellSeconds;
+
+        if (dwellMet)
         {
             if (currentlyHighlightedButton != null)
-            {
                 UnhighlightButton(currentlyHighlightedButton);
-            }
-            if (nearestButton != null)
-            {
-                HighlightButton(nearestButton);
-            }
-            
-            currentlyHighlightedButton = nearestButton;
+            HighlightButton(candidateButton);
+            currentlyHighlightedButton = candidateButton;
+            hasPending = false;
+            pendingKeyButton = null;
         }
     }
     
@@ -351,6 +383,8 @@ public class KeyboardHighlighter : MonoBehaviour
         RestoreAllButtonsToOriginal();
         poppedOutButtons.Clear();
         currentlyHighlightedButton = null;
+        hasPending = false;
+        pendingKeyButton = null;
     }
     public void RefreshButtonList()
     {
@@ -374,6 +408,8 @@ public class KeyboardHighlighter : MonoBehaviour
 
     public Button GetNearestButtonToGaze()
     {
+        if (!externalHighlightActive && currentlyHighlightedButton != null)
+            return currentlyHighlightedButton;
         Vector2 gazePosition = GetGazePosition();
         return FindNearestButton(gazePosition);
     }
