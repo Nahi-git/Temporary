@@ -13,9 +13,9 @@ let latest = null;
 let isCalibrating = false;
 
 //adaptive gaze smoothing: smooth more when fixating on a key, less when moving between keys
-const FIXATION_ALPHA = 0.12;   //when gaze is still (focusing on a key) - strong smoothing  (lower value = more smoothing, higher value = less smoothing) 
+const FIXATION_ALPHA = 0.1;   //when gaze is still (focusing on a key) - strong smoothing  (lower value = more smoothing, higher value = less smoothing) 
 const SACCADE_ALPHA = 1.0;    //when gaze is moving - light smoothing so it doesn't lag (lower value = more smoothing, higher value = less smoothing)
-const VELOCITY_THRESHOLD_PX_S = 120;  //below this (px/s) we treat as fixation (lower = more often treated as moving, higher = more often treated as moving)
+const VELOCITY_THRESHOLD_PX_S = 160;  //below this (px/s) we treat as fixation (lower = more often treated as moving, higher = more often treated as moving)
 let smoothedX = null;
 let smoothedY = null;
 let lastRawX = null;

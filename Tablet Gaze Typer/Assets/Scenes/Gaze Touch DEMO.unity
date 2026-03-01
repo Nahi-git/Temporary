@@ -7377,7 +7377,7 @@ MonoBehaviour:
   offsetFromCorner: {x: 0, y: 0}
   showFaceGuide: 1
   faceGuideShape: 0
-  faceGuideSizeFraction: 0.5
+  faceGuideSizeFraction: 0.65
   faceGuideColor: {r: 0, g: 1, b: 0.039215688, a: 1}
   faceGuideLineWidth: 2
 --- !u!1 &1529063347
