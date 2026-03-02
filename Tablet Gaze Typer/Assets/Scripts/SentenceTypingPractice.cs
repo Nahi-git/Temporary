@@ -28,6 +28,11 @@ public class SentenceTypingPractice : MonoBehaviour
     [Tooltip("Optional: Button or panel to show when typing is complete (e.g. 'Go to Gaze Only'). Hidden at start and during countdown/typing.")]
     public GameObject buttonToShowWhenComplete;
     
+    [Tooltip("Optional: logs one row per completed phrase to a separate CSV (condition, WPM, TER, etc.).")]
+    public PhraseMetricsLogger phraseMetricsLogger;
+    [Tooltip("Optional: used with phraseMetricsLogger to get PhraseID and sentence number.")]
+    public SentenceSessionManager sentenceSessionManager;
+    
     [Header("Sentence Settings")]
     [Tooltip("The sentence the user should type")]
     [TextArea(2, 5)]
@@ -66,6 +71,8 @@ public class SentenceTypingPractice : MonoBehaviour
     private PracticeState state = PracticeState.Countdown;
     private float typingStartTime;
     private float typingEndTime;
+    private float firstKeystrokeTime;
+    private float lastKeystrokeTime;
     private Coroutine countdownCoroutine;
     public PracticeState State => state;
     
@@ -118,6 +125,8 @@ public class SentenceTypingPractice : MonoBehaviour
         {
             keyboardPanel = GameObject.Find("KeyboardPanel");
         }
+        if (phraseMetricsLogger == null) phraseMetricsLogger = FindObjectOfType<PhraseMetricsLogger>();
+        if (sentenceSessionManager == null) sentenceSessionManager = FindObjectOfType<SentenceSessionManager>();
         EnsureSentenceDisplayUniformSize();
         InitializeSentence();
         BeginCountdown();
@@ -258,6 +267,8 @@ public class SentenceTypingPractice : MonoBehaviour
     {
         state = PracticeState.Typing;
         typingStartTime = Time.time;
+        firstKeystrokeTime = 0f;
+        lastKeystrokeTime = 0f;
         if (targetInputField != null)
         {
             targetInputField.interactable = true;
@@ -297,6 +308,9 @@ public class SentenceTypingPractice : MonoBehaviour
         //if the character is wrong, user does not need to backspace, just type the correct character
         if (newText.Length > previousInputText.Length)
         {
+            float t = Time.time;
+            if (firstKeystrokeTime <= 0f) firstKeystrokeTime = t;
+            lastKeystrokeTime = t;
             char newChar = newText[newText.Length - 1];
             char expectedChar = originalSentence[currentIndex];
             bool isMatch = false;
@@ -324,7 +338,23 @@ public class SentenceTypingPractice : MonoBehaviour
         state = PracticeState.Complete;
         typingEndTime = Time.time;
         float elapsed = typingEndTime - typingStartTime;
-        
+
+        if (phraseMetricsLogger != null)
+        {
+            int phraseId = sentenceSessionManager != null ? sentenceSessionManager.CurrentSentenceId : 0;
+            int sentenceNumber = sentenceSessionManager != null ? sentenceSessionManager.CurrentSentenceNumber : 1;
+            string typed = targetInputField != null ? targetInputField.text : "";
+            phraseMetricsLogger.LogPhrase(
+                phraseId,
+                sentenceNumber,
+                originalSentence,
+                typed,
+                typingStartTime,
+                firstKeystrokeTime,
+                lastKeystrokeTime,
+                typingEndTime);
+        }
+
         if (targetInputField != null)
         {
             targetInputField.interactable = false;

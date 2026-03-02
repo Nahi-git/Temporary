@@ -54,7 +54,7 @@ public class UnityGazeCalibrator : MonoBehaviour
     float a, b, c, d, e, f;
 
     //smoothing
-    public bool smoothing = true;
+    public bool smoothing = false;
     [Range(0.01f, 1f)] public float emaAlpha = 0.25f;
     Vector2 ema;
 
@@ -560,7 +560,6 @@ public class UnityGazeCalibrator : MonoBehaviour
             e = PlayerPrefs.GetFloat("GazeCal_e");
             f = PlayerPrefs.GetFloat("GazeCal_f");
             calibrated = true;
-            
             if (gazeClient != null)
             {
                 ema = ApplyAffine(gazeClient.rawGaze);

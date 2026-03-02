@@ -16,11 +16,13 @@ let isCalibrating = false;
 const FIXATION_ALPHA = 0.1;   //when gaze is still (focusing on a key) - strong smoothing  (lower value = more smoothing, higher value = less smoothing) 
 const SACCADE_ALPHA = 1.0;    //when gaze is moving - light smoothing so it doesn't lag (lower value = more smoothing, higher value = less smoothing)
 const VELOCITY_THRESHOLD_PX_S = 160;  //below this (px/s) we treat as fixation (lower = more often treated as moving, higher = more often treated as moving)
+const ROLLING_AVERAGE_FRAMES = 5;  //rolling mean over this many frames before exponential smoothing (try 3–7 for tuning)
 let smoothedX = null;
 let smoothedY = null;
 let lastRawX = null;
 let lastRawY = null;
 let lastRawTime = null;
+let gazeRollingBuffer = [];  //rolling average buffer
 let calibrateBtn = null;
 let calibrationHint = null;
 let videoElement = null;
@@ -190,6 +192,7 @@ async function autoCalibrateWebGazer() {
   lastRawX = null;
   lastRawY = null;
   lastRawTime = null;
+  gazeRollingBuffer = [];
   //clear previous data cached
   try {
     if (typeof webgazer.clearData === "function") webgazer.clearData();
@@ -289,6 +292,17 @@ webgazer
       const y = data.y;
       const now = performance.now() / 1000; // seconds
 
+      //rolling average: buffer last N raw samples, feed mean into exponential
+      gazeRollingBuffer.push({ x, y });
+      if (gazeRollingBuffer.length > ROLLING_AVERAGE_FRAMES) gazeRollingBuffer.shift();
+      let meanX = 0, meanY = 0;
+      for (let i = 0; i < gazeRollingBuffer.length; i++) {
+        meanX += gazeRollingBuffer[i].x;
+        meanY += gazeRollingBuffer[i].y;
+      }
+      meanX /= gazeRollingBuffer.length;
+      meanY /= gazeRollingBuffer.length;
+
       let alpha = SACCADE_ALPHA;
       if (lastRawX !== null && lastRawY !== null && lastRawTime !== null) {
         const dt = now - lastRawTime;
@@ -304,11 +318,11 @@ webgazer
       lastRawTime = now;
 
       if (smoothedX === null || smoothedY === null) {
-        smoothedX = x;
-        smoothedY = y;
+        smoothedX = meanX;
+        smoothedY = meanY;
       } else {
-        smoothedX = alpha * x + (1 - alpha) * smoothedX;
-        smoothedY = alpha * y + (1 - alpha) * smoothedY;
+        smoothedX = alpha * meanX + (1 - alpha) * smoothedX;
+        smoothedY = alpha * meanY + (1 - alpha) * smoothedY;
       }
       latest = { x: smoothedX, y: smoothedY };
       console.log('Gaze data:', latest); //debug log
