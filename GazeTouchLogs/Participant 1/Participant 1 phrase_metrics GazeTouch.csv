@@ -1,0 +1,31 @@
+﻿ParticipantID,Condition,PhraseID,SentenceNumber,TargetText,TypedText,TaskTime,TypingTime,TimeToFirstKey,SubmitLatency,TaskWPM,TypingWPM,CorrectChars,IncorrectChars,TER
+1,GazeTouch,6,1,this looks fine,this looks fine,21.59,20.14,1.45,0.00,7.78,8.34,15,0,0.00
+1,GazeTouch,26,2,wednesday is definitely a hot chocolate day,wednesday is definitemy a hot chocolate day,72.50,68.65,3.85,0.00,6.95,7.34,42,1,0.02
+1,GazeTouch,2,3,take what you can get,take what you can get,31.85,29.81,2.04,0.00,7.53,8.05,21,0,0.00
+1,GazeTouch,11,4,are you getting all the information you need,are you gettkng alm the infnrmation you need,58.84,56.53,2.30,0.00,8.77,9.13,41,3,0.07
+1,GazeTouch,27,5,thanks for your concern,thanks fkr your conxerm,34.11,31.06,3.05,0.00,7.74,8.50,20,3,0.13
+1,GazeTouch,20,6,whats going on,whatt going on,19.80,15.28,4.52,0.00,7.88,10.21,13,1,0.07
+1,GazeTouch,1,7,have i mentioned how much i love houston traffic,have i mentioned how mucj i lpve houston traffic,72.73,69.28,3.45,0.00,7.75,8.14,46,2,0.04
+1,GazeTouch,8,8,get with mary for format,get with maru fbr format,33.93,30.85,3.08,0.00,8.13,8.95,22,2,0.08
+1,GazeTouch,5,9,im glad you liked it,im glad you liked it,24.78,22.38,2.41,0.00,9.20,10.19,20,0,0.00
+1,GazeTouch,13,10,did you talk to ava this morning,dkk you tzlk to ab  this  orning,41.88,38.57,3.31,0.00,8.88,9.64,26,6,0.19
+1,GazeTouch,21,11,you can talk to becky,you cam tslk to becky,25.27,24.11,1.16,0.00,9.50,9.95,19,2,0.10
+1,GazeTouch,17,12,is it over,is it over,12.89,10.59,2.30,0.00,8.38,10.20,10,0,0.00
+1,GazeTouch,18,13,ill get you one,ill get you pne,20.02,17.59,2.43,0.00,8.39,9.55,14,1,0.07
+1,GazeTouch,16,14,has anyone else heard anything,has amyone else heard anything,39.27,35.87,3.40,0.00,8.86,9.70,29,1,0.03
+1,GazeTouch,24,15,i am at the lake,i am at the lame,20.12,16.97,3.16,0.00,8.94,10.61,15,1,0.06
+1,GazeTouch,10,16,im glad she likes her tree,im hoad she likes yer tree,35.10,32.64,2.46,0.00,8.55,9.19,23,3,0.12
+1,GazeTouch,28,17,thursday works better for me,thursday worls better for me,36.66,34.09,2.57,0.00,8.84,9.50,27,1,0.04
+1,GazeTouch,12,18,have a great trip,have a vreat trip,22.34,20.78,1.56,0.00,8.59,9.24,16,1,0.06
+1,GazeTouch,14,19,can you help,can you hepp,15.34,12.85,2.49,0.00,8.60,10.27,11,1,0.08
+1,GazeTouch,15,20,its not looking too good is it,its not looking too good is it,37.42,33.31,4.10,0.00,9.30,10.45,30,0,0.00
+1,GazeTouch,7,21,ive never worked with her,ive never worked with her,31.04,29.99,1.05,0.00,9.28,9.60,25,0,0.00
+1,GazeTouch,23,22,i agreed terms with greg,i agreed terms witj greg,29.39,26.76,2.63,0.00,9.39,10.31,23,1,0.04
+1,GazeTouch,4,23,i think that is the right answer,i tjinm that is the right answer,41.75,39.19,2.56,0.00,8.91,9.49,30,2,0.06
+1,GazeTouch,9,24,i hope you are feeling better,i hope you are reeling better,38.46,35.87,2.59,0.00,8.74,9.37,28,1,0.03
+1,GazeTouch,3,25,should systems manage the migration,should systems ma age the migration,49.40,45.13,4.27,0.00,8.26,9.04,34,1,0.03
+1,GazeTouch,29,26,what is the mood,what is the mood,22.39,20.11,2.28,0.00,8.04,8.95,16,0,0.00
+1,GazeTouch,19,27,ok with me,ok with   ,13.29,11.25,2.04,0.00,8.13,9.60,8,2,0.20
+1,GazeTouch,22,28,i talked to duran,i talked to duran,24.10,21.33,2.77,0.00,7.97,9.00,17,0,0.00
+1,GazeTouch,25,29,i told you silly,i told yoj silly,22.31,19.43,2.88,0.00,8.07,9.27,15,1,0.06
+1,GazeTouch,30,30,i am on my way,iaam on my way,19.07,17.60,1.47,0.00,8.18,8.86,13,1,0.07

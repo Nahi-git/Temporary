@@ -23,8 +23,8 @@
 23	i agreed terms with greg
 24	i am at the lake
 25	i told you silly
-26  wednesday is definitely a hot chocolate day
-27  thanks for your concern
-28  thursday works better for me
-29  what is the mood
-30  i am on my way
+26	wednesday is definitely a hot chocolate day
+27	thanks for your concern
+28	thursday works better for me
+29	what is the mood
+30	i am on my way
