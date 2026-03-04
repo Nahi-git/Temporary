@@ -32,6 +32,10 @@ public class SentenceTypingPractice : MonoBehaviour
     public PhraseMetricsLogger phraseMetricsLogger;
     [Tooltip("Optional: used with phraseMetricsLogger to get PhraseID and sentence number.")]
     public SentenceSessionManager sentenceSessionManager;
+    [Tooltip("Optional: disabled during Break/Countdown so user cannot type (Gaze+Touch mode).")]
+    public ThumbTypingController thumbTypingController;
+    [Tooltip("Optional: disabled during Break/Countdown so user cannot type (Gaze-only mode).")]
+    public GazeTapTypingController gazeTapTypingController;
     
     [Header("Sentence Settings")]
     [Tooltip("The sentence the user should type")]
@@ -74,24 +78,30 @@ public class SentenceTypingPractice : MonoBehaviour
     private float firstKeystrokeTime;
     private float lastKeystrokeTime;
     private Coroutine countdownCoroutine;
+    private bool _breakPreservesInput;
+    private bool _resumingFromManualPause;
+    private float _accumulatedTypingTime;
+    private float _pauseStartTime;
+    private float _totalPauseDuration;
+    private float _currentSegmentFirstKeyTime;
     public PracticeState State => state;
     
     void Update()
     {
+        if (!WasPKeyPressedThisFrame()) return;
+        if (state == PracticeState.Typing)
+        {
+            BeginBreak(clearInput: false);
+            return;
+        }
         if (state != PracticeState.Break) return;
-        if (!WasTapThisFrame()) return;
-        BeginCountdown();
+        BeginCountdown(clearInput: !_breakPreservesInput);
     }
 
-    static bool WasTapThisFrame()
+    static bool WasPKeyPressedThisFrame()
     {
-        var touchscreen = Touchscreen.current;
-        if (touchscreen != null && touchscreen.touches.Count > 0 && touchscreen.touches[0].press.wasPressedThisFrame)
-            return true;
-        var mouse = Mouse.current;
-        if (mouse != null && mouse.leftButton.wasPressedThisFrame)
-            return true;
-        return false;
+        var keyboard = Keyboard.current;
+        return keyboard != null && keyboard.pKey.wasPressedThisFrame;
     }
 
     public float GetTypingElapsedTime()
@@ -127,6 +137,8 @@ public class SentenceTypingPractice : MonoBehaviour
         }
         if (phraseMetricsLogger == null) phraseMetricsLogger = FindObjectOfType<PhraseMetricsLogger>();
         if (sentenceSessionManager == null) sentenceSessionManager = FindObjectOfType<SentenceSessionManager>();
+        if (thumbTypingController == null) thumbTypingController = FindObjectOfType<ThumbTypingController>();
+        if (gazeTapTypingController == null) gazeTapTypingController = FindObjectOfType<GazeTapTypingController>();
         EnsureSentenceDisplayUniformSize();
         InitializeSentence();
         BeginCountdown();
@@ -181,14 +193,18 @@ public class SentenceTypingPractice : MonoBehaviour
             buttonToShowWhenComplete.SetActive(false);
     }
     
-    public void BeginBreak()
+    public void BeginBreak(bool clearInput = true)
     {
         state = PracticeState.Break;
+        _breakPreservesInput = !clearInput;
         if (targetInputField != null)
         {
             targetInputField.interactable = false;
-            targetInputField.text = "";
-            previousInputText = "";
+            if (clearInput)
+            {
+                targetInputField.text = "";
+                previousInputText = "";
+            }
         }
         if (keyboardPanel != null)
             keyboardPanel.SetActive(false);
@@ -202,18 +218,29 @@ public class SentenceTypingPractice : MonoBehaviour
         if (countdownDisplay != null)
         {
             countdownDisplay.gameObject.SetActive(true);
-            countdownDisplay.text = "BREAK";
+            countdownDisplay.text = "BREAK\nPress P to continue";
+        }
+        SetTypingControllersEnabled(false);
+        if (!clearInput)
+        {
+            _pauseStartTime = Time.time;
+            if (firstKeystrokeTime > 0f && lastKeystrokeTime > 0f)
+                _accumulatedTypingTime += lastKeystrokeTime - firstKeystrokeTime;
         }
     }
 
-    public void BeginCountdown()
+    public void BeginCountdown(bool clearInput = true)
     {
         state = PracticeState.Countdown;
+        _resumingFromManualPause = !clearInput;
         if (targetInputField != null)
         {
             targetInputField.interactable = false;
-            targetInputField.text = "";
-            previousInputText = "";
+            if (clearInput)
+            {
+                targetInputField.text = "";
+                previousInputText = "";
+            }
         }
         if (keyboardPanel != null)
         {
@@ -225,7 +252,14 @@ public class SentenceTypingPractice : MonoBehaviour
         {
             StopCoroutine(countdownCoroutine);
         }
+        SetTypingControllersEnabled(false);
         countdownCoroutine = StartCoroutine(CountdownRoutine());
+    }
+    
+    void SetTypingControllersEnabled(bool enabled)
+    {
+        if (thumbTypingController != null) thumbTypingController.enabled = enabled;
+        if (gazeTapTypingController != null) gazeTapTypingController.enabled = enabled;
     }
     
     IEnumerator CountdownRoutine()
@@ -266,9 +300,22 @@ public class SentenceTypingPractice : MonoBehaviour
     void StartTypingState()
     {
         state = PracticeState.Typing;
-        typingStartTime = Time.time;
-        firstKeystrokeTime = 0f;
-        lastKeystrokeTime = 0f;
+        if (!_resumingFromManualPause)
+        {
+            typingStartTime = Time.time;
+            firstKeystrokeTime = 0f;
+            lastKeystrokeTime = 0f;
+            _accumulatedTypingTime = 0f;
+            _totalPauseDuration = 0f;
+            _currentSegmentFirstKeyTime = 0f;
+        }
+        else
+        {
+            _totalPauseDuration += Time.time - _pauseStartTime;
+            lastKeystrokeTime = 0f;
+            _currentSegmentFirstKeyTime = 0f;
+        }
+        _resumingFromManualPause = false;
         if (targetInputField != null)
         {
             targetInputField.interactable = true;
@@ -277,6 +324,7 @@ public class SentenceTypingPractice : MonoBehaviour
         {
             keyboardPanel.SetActive(true);
         }
+        SetTypingControllersEnabled(true);
     }
     
     void OnInputFieldChanged(string newText)
@@ -287,7 +335,19 @@ public class SentenceTypingPractice : MonoBehaviour
         }
         if (state != PracticeState.Typing)
         {
-            previousInputText = newText;
+            if (state == PracticeState.Break || state == PracticeState.Countdown)
+            {
+                if (targetInputField != null && targetInputField.text != previousInputText)
+                {
+                    isProcessingInput = true;
+                    targetInputField.text = previousInputText;
+                    isProcessingInput = false;
+                }
+            }
+            else
+            {
+                previousInputText = newText;
+            }
             return;
         }
         if (currentIndex >= originalSentence.Length)
@@ -310,6 +370,7 @@ public class SentenceTypingPractice : MonoBehaviour
         {
             float t = Time.time;
             if (firstKeystrokeTime <= 0f) firstKeystrokeTime = t;
+            else if (_currentSegmentFirstKeyTime <= 0f) _currentSegmentFirstKeyTime = t;
             lastKeystrokeTime = t;
             char newChar = newText[newText.Length - 1];
             char expectedChar = originalSentence[currentIndex];
@@ -344,6 +405,11 @@ public class SentenceTypingPractice : MonoBehaviour
             int phraseId = sentenceSessionManager != null ? sentenceSessionManager.CurrentSentenceId : 0;
             int sentenceNumber = sentenceSessionManager != null ? sentenceSessionManager.CurrentSentenceNumber : 1;
             string typed = targetInputField != null ? targetInputField.text : "";
+            float lastSegmentTyping = 0f;
+            if (lastKeystrokeTime > 0f && _currentSegmentFirstKeyTime > 0f)
+                lastSegmentTyping = lastKeystrokeTime - _currentSegmentFirstKeyTime;
+            else if (lastKeystrokeTime > 0f && firstKeystrokeTime > 0f)
+                lastSegmentTyping = lastKeystrokeTime - firstKeystrokeTime;
             phraseMetricsLogger.LogPhrase(
                 phraseId,
                 sentenceNumber,
@@ -352,13 +418,17 @@ public class SentenceTypingPractice : MonoBehaviour
                 typingStartTime,
                 firstKeystrokeTime,
                 lastKeystrokeTime,
-                typingEndTime);
+                typingEndTime,
+                totalPauseDuration: _totalPauseDuration,
+                preAccumulatedTypingTime: _accumulatedTypingTime,
+                lastSegmentTypingTime: lastSegmentTyping);
         }
 
         if (targetInputField != null)
         {
             targetInputField.interactable = false;
         }
+        SetTypingControllersEnabled(false);
         
         string timeText = FormatTime(elapsed);
         if (resultDisplay != null)

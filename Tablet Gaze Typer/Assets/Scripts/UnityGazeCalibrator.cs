@@ -63,6 +63,7 @@ public class UnityGazeCalibrator : MonoBehaviour
 
     int index = 0;
     bool isCalibrating = false;
+    bool _calibrationStartedFromBreak;
     private float lastGazeLogTime = 0f;
     private const float GAZE_LOG_INTERVAL = 2f;
 
@@ -155,10 +156,12 @@ public class UnityGazeCalibrator : MonoBehaviour
 
     void Update()
     {
-        //start calibration
+        //start calibration, dont show post calibration UI
         if (!isCalibrating && Keyboard.current != null && Keyboard.current.cKey.wasPressedThisFrame)
         {
-            StartCalibration();
+            var practice = FindObjectOfType<SentenceTypingPractice>();
+            bool fromBreak = practice != null && practice.State == SentenceTypingPractice.PracticeState.Break;
+            StartCalibration(fromBreak);
         }
 
         //if calibrating, space/tap/click captures for current point
@@ -237,10 +240,11 @@ public class UnityGazeCalibrator : MonoBehaviour
         return calibrated ? calibratedGaze : gazeClient.rawGaze;
     }
 
-    public void StartCalibration()
+    public void StartCalibration(bool fromBreak = false)
     {
         calibrated = false;
         isCalibrating = true;
+        _calibrationStartedFromBreak = fromBreak;
         index = 0;
         measuredPoints.Clear();
         targetPoints.Clear();
@@ -369,8 +373,12 @@ public class UnityGazeCalibrator : MonoBehaviour
             SaveCalibrationData();
             HideDot();
             HideInstructionText();
-            ShowKeyboard();
-            ShowPostCalibrationButton();
+            if (!_calibrationStartedFromBreak)
+            {
+                ShowKeyboard();
+                ShowPostCalibrationButton();
+            }
+            _calibrationStartedFromBreak = false;
         }
         else
         {

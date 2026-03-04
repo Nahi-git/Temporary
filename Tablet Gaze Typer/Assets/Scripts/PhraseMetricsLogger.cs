@@ -40,7 +40,10 @@ public class PhraseMetricsLogger : MonoBehaviour
         float phraseStartTime,
         float firstKeystrokeTime,
         float lastKeystrokeTime,
-        float endTime)
+        float endTime,
+        float totalPauseDuration = 0f,
+        float preAccumulatedTypingTime = 0f,
+        float lastSegmentTypingTime = -1f)
     {
         EnsureFileAndHeader();
 
@@ -50,9 +53,10 @@ public class PhraseMetricsLogger : MonoBehaviour
         string typedStr = typedText ?? "";
         int typedLength = typedStr.Length;
 
-        float taskTime = endTime - phraseStartTime;
+        float taskTime = (endTime - phraseStartTime) - totalPauseDuration;
         float timeToFirstKey = firstKeystrokeTime > 0f ? (firstKeystrokeTime - phraseStartTime) : 0f;
-        float typingTime = (lastKeystrokeTime > 0f && firstKeystrokeTime > 0f) ? (lastKeystrokeTime - firstKeystrokeTime) : 0f;
+        float lastSegmentTyping = lastSegmentTypingTime >= 0f ? lastSegmentTypingTime : (lastKeystrokeTime > 0f && firstKeystrokeTime > 0f ? (lastKeystrokeTime - firstKeystrokeTime) : 0f);
+        float typingTime = preAccumulatedTypingTime + lastSegmentTyping;
         float submitLatency = lastKeystrokeTime > 0f ? (endTime - lastKeystrokeTime) : 0f;
 
         float taskWPM = (typedLength > 1 && taskTime > 0f) ? ((typedLength - 1) / taskTime) * 60f * 0.2f : 0f;
