@@ -4139,7 +4139,7 @@ MonoBehaviour:
   outputFolderName: GazeTouchLogs
   logFileNameSuffix: GazeTouch
   logRateHz: 90
-  participantNumber: 2
+  participantNumber: 3
   participantNumberPlayerPrefsKey: GazeTouchParticipantNumber
 --- !u!4 &795956388
 Transform:
@@ -4169,7 +4169,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhraseMetricsLogger
   outputFolderName: GazeTouchLogs
-  participantNumber: 2
+  participantNumber: 3
   participantNumberPlayerPrefsKey: GazeTouchParticipantNumber
   conditionName: GazeTouch
 --- !u!1 &853569851
@@ -4855,7 +4855,7 @@ MonoBehaviour:
   progressDisplay: {fileID: 879575136}
   sentencesResourceName: Sentences
   endOfSessionText: End of Gaze + Touch
-  breakEveryNSentences: 10
+  breakEveryNSentences: 2
 --- !u!4 &1043887819
 Transform:
   m_ObjectHideFlags: 0
@@ -6386,8 +6386,12 @@ MonoBehaviour:
   buttonToShowWhenComplete: {fileID: 0}
   phraseMetricsLogger: {fileID: 0}
   sentenceSessionManager: {fileID: 0}
+  thumbTypingController: {fileID: 0}
+  gazeTapTypingController: {fileID: 0}
+  breakCenterSquare: {fileID: 0}
   targetSentence: The quick brown fox jumps over the lazy dog
   countdownSeconds: 10
+  countdownAfterBreakSeconds: 3
   correctColor: {r: 0, g: 1, b: 0, a: 1}
   defaultColor: {r: 1, g: 1, b: 1, a: 1}
   currentLetterColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}

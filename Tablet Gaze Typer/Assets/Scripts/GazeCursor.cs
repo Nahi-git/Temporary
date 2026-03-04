@@ -51,7 +51,7 @@ public class GazeCursor : MonoBehaviour
         return isVisible;
     }
     
-    //users should not see the gaze cursor when typing, as it is distracting
+    //users should not see the gaze cursor when typing, as it is distracting; show during Break so they can re-orient
     private void UpdateVisibility()
     {
         bool shouldShow = isVisible;
@@ -59,6 +59,10 @@ public class GazeCursor : MonoBehaviour
         if (typing != null && typing.State == SentenceTypingPractice.PracticeState.Typing)
         {
             shouldShow = false;
+        }
+        if (typing != null && typing.State == SentenceTypingPractice.PracticeState.Break)
+        {
+            shouldShow = true;
         }
         
         if (cursorImage != null)

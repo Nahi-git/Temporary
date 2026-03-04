@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 using System.Text;
@@ -37,14 +38,20 @@ public class SentenceTypingPractice : MonoBehaviour
     [Tooltip("Optional: disabled during Break/Countdown so user cannot type (Gaze-only mode).")]
     public GazeTapTypingController gazeTapTypingController;
     
+    [Header("Break")]
+    [Tooltip("Optional: black square shown in center during break for re-orienting gaze. Created at runtime if null.")]
+    public GameObject breakCenterSquare;
+    
     [Header("Sentence Settings")]
     [Tooltip("The sentence the user should type")]
     [TextArea(2, 5)]
     public string targetSentence = "The quick brown fox jumps over the lazy dog";
     
     [Header("Countdown & Timing")]
-    [Tooltip("Countdown duration in seconds before typing starts")]
+    [Tooltip("Countdown duration in seconds before typing starts (e.g. at session start).")]
     public float countdownSeconds = 10f;
+    [Tooltip("Countdown duration in seconds when resuming from a break (press P to continue).")]
+    public float countdownAfterBreakSeconds = 3f;
     
     [Header("Colors")]
     [Tooltip("Color for correctly typed letters")]
@@ -84,6 +91,7 @@ public class SentenceTypingPractice : MonoBehaviour
     private float _pauseStartTime;
     private float _totalPauseDuration;
     private float _currentSegmentFirstKeyTime;
+    private float _currentCountdownDuration;
     public PracticeState State => state;
     
     void Update()
@@ -95,7 +103,7 @@ public class SentenceTypingPractice : MonoBehaviour
             return;
         }
         if (state != PracticeState.Break) return;
-        BeginCountdown(clearInput: !_breakPreservesInput);
+        BeginCountdown(clearInput: !_breakPreservesInput, countdownDuration: countdownAfterBreakSeconds);
     }
 
     static bool WasPKeyPressedThisFrame()
@@ -140,6 +148,7 @@ public class SentenceTypingPractice : MonoBehaviour
         if (thumbTypingController == null) thumbTypingController = FindObjectOfType<ThumbTypingController>();
         if (gazeTapTypingController == null) gazeTapTypingController = FindObjectOfType<GazeTapTypingController>();
         EnsureSentenceDisplayUniformSize();
+        EnsureBreakCenterSquare();
         InitializeSentence();
         BeginCountdown();
     }
@@ -220,6 +229,9 @@ public class SentenceTypingPractice : MonoBehaviour
             countdownDisplay.gameObject.SetActive(true);
             countdownDisplay.text = "BREAK\nPress P to continue";
         }
+        EnsureBreakCenterSquare();
+        if (breakCenterSquare != null)
+            breakCenterSquare.SetActive(true);
         SetTypingControllersEnabled(false);
         if (!clearInput)
         {
@@ -229,9 +241,12 @@ public class SentenceTypingPractice : MonoBehaviour
         }
     }
 
-    public void BeginCountdown(bool clearInput = true)
+    public void BeginCountdown(bool clearInput = true, float? countdownDuration = null)
     {
         state = PracticeState.Countdown;
+        _currentCountdownDuration = countdownDuration ?? countdownSeconds;
+        if (breakCenterSquare != null)
+            breakCenterSquare.SetActive(false);
         _resumingFromManualPause = !clearInput;
         if (targetInputField != null)
         {
@@ -256,6 +271,33 @@ public class SentenceTypingPractice : MonoBehaviour
         countdownCoroutine = StartCoroutine(CountdownRoutine());
     }
     
+    void EnsureBreakCenterSquare()
+    {
+        if (breakCenterSquare != null) return;
+        Canvas canvas = countdownDisplay != null ? countdownDisplay.GetComponentInParent<Canvas>() : null;
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+        Vector2 size = new Vector2(150f, 150f);
+        var gazeCursor = FindObjectOfType<GazeCursor>();
+        if (gazeCursor != null)
+        {
+            var cursorRect = gazeCursor.GetComponent<RectTransform>();
+            if (cursorRect != null) size = cursorRect.sizeDelta;
+        }
+        var go = new GameObject("BreakCenterSquare");
+        go.transform.SetParent(canvas.transform, false);
+        var rect = go.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = size;
+        var image = go.AddComponent<Image>();
+        image.color = Color.black;
+        breakCenterSquare = go;
+        go.SetActive(false);
+    }
+    
     void SetTypingControllersEnabled(bool enabled)
     {
         if (thumbTypingController != null) thumbTypingController.enabled = enabled;
@@ -264,7 +306,7 @@ public class SentenceTypingPractice : MonoBehaviour
     
     IEnumerator CountdownRoutine()
     {
-        int remaining = Mathf.CeilToInt(countdownSeconds);
+        int remaining = Mathf.CeilToInt(_currentCountdownDuration);
         for (int i = remaining; i >= 1; i--)
         {
             if (countdownDisplay != null)
