@@ -1,0 +1,31 @@
+﻿ParticipantID,Condition,PhraseID,SentenceNumber,TargetText,TypedText,TaskTime,TypingTime,TimeToFirstKey,SubmitLatency,TaskWPM,TypingWPM,CorrectChars,IncorrectChars,TER
+6,GazeOnly,24,1,i am at the lake,i am at ghe laie,27.05,21.55,2.83,0.00,6.65,8.35,14,2,0.13
+6,GazeOnly,1,2,have i mentioned how much i love houston traffic,hacr i mentionws hoe much i kove houston traddic,96.34,91.32,3.51,0.00,5.85,6.18,40,8,0.17
+6,GazeOnly,2,3,take what you can get,tald what you ca  get,34.53,30.37,2.73,0.00,6.95,7.90,18,3,0.14
+6,GazeOnly,8,4,get with mary for format,get witg marydfoe forkat,38.91,34.13,1.96,0.00,7.09,8.09,20,4,0.17
+6,GazeOnly,4,5,i think that is the right answer,i ghibk gbat ix the rigbt anawer,55.89,53.07,0.98,0.00,6.66,7.01,25,7,0.22
+6,GazeOnly,23,6,i agreed terms with greg,i agrwwd trrms with freg,35.59,32.40,2.05,0.00,7.76,8.52,20,4,0.17
+6,GazeOnly,22,7,i talked to duran,i talked todxuran,27.10,22.83,1.66,0.00,7.08,8.41,15,2,0.12
+6,GazeOnly,13,8,did you talk to ava this morning,did you galn to avz this morning,46.38,43.46,1.76,0.00,8.02,8.56,29,3,0.09
+6,GazeOnly,27,9,thanks for your concern,thanjz foe your cojcetn,37.49,33.49,2.82,0.00,7.04,7.88,18,5,0.22
+6,GazeOnly,20,10,whats going on,qhats going ln,27.52,19.22,28.66,0.00,5.67,8.12,12,2,0.14
+6,GazeOnly,17,11,is it over,is it pver,13.22,9.53,2.20,0.00,8.17,11.33,9,1,0.10
+6,GazeOnly,9,12,i hope you are feeling better,o hope yoy zrd fwwling brtter,41.81,39.02,1.38,0.00,8.04,8.61,22,7,0.24
+6,GazeOnly,7,13,ive never worked with her,kge nevrr wotked with het,50.34,45.86,0.93,0.00,5.72,6.28,20,5,0.20
+6,GazeOnly,15,14,its not looking too good is it,its not lolkkng too goid ix gf,49.10,42.01,5.25,0.00,7.09,8.28,24,6,0.20
+6,GazeOnly,28,15,thursday works better for me,thurzday works bettdr for me,42.32,40.11,1.14,0.00,7.66,8.08,26,2,0.07
+6,GazeOnly,19,16,ok with me,ok with me,15.59,12.22,2.17,0.00,6.93,8.84,10,0,0.00
+6,GazeOnly,12,17,have a great trip,have a grear trip,24.09,20.94,1.16,0.00,7.97,9.17,16,1,0.06
+6,GazeOnly,21,18,you can talk to becky,you can tzlk hecbecky,42.06,38.79,2.04,0.00,5.71,6.19,17,4,0.19
+6,GazeOnly,30,19,i am on my way,i zm on my way,21.24,17.47,2.38,0.00,7.34,8.93,13,1,0.07
+6,GazeOnly,6,20,this looks fine,this lookd cine,22.13,19.01,2.04,0.00,7.59,8.84,13,2,0.13
+6,GazeOnly,11,21,are you getting all the information you need,are you gettinv akltthr informatuo  you need,65.07,62.27,1.17,0.00,7.93,8.29,38,6,0.14
+6,GazeOnly,14,22,can you help,can hlu help,16.26,13.12,1.95,0.00,8.12,10.06,10,2,0.17
+6,GazeOnly,3,23,should systems manage the migration,shohlxvsysgems manafe ghe  kgragiln,75.49,70.77,2.95,0.00,5.40,5.76,25,10,0.29
+6,GazeOnly,26,24,wednesday is definitely a hot chocolate day,wrdnesdzy is definitely a hot cholalats day,82.59,78.05,10.35,0.00,6.10,6.46,38,5,0.12
+6,GazeOnly,10,25,im glad she likes her tree,im hlad zbe likwz her tfew,41.70,37.50,1.79,0.00,7.19,8.00,19,7,0.27
+6,GazeOnly,29,26,what is the mood,what iz tje kpod,22.04,17.11,41.08,0.00,8.17,10.52,12,4,0.25
+6,GazeOnly,5,27,im glad you liked it,i  glas you oiked it,32.99,29.73,1.24,0.00,6.91,7.67,17,3,0.15
+6,GazeOnly,16,28,has anyone else heard anything,had anyone slse heard anything,50.38,47.44,1.92,0.00,6.91,7.34,28,2,0.07
+6,GazeOnly,25,29,i told you silly,i told you willy,29.23,26.51,1.26,0.00,6.16,6.79,15,1,0.06
+6,GazeOnly,18,30,ill get you one,ill get tou obe,28.13,21.10,6.15,0.00,5.97,7.96,13,2,0.13
