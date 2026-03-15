@@ -1,0 +1,31 @@
+﻿ParticipantID,Condition,PhraseID,SentenceNumber,TargetText,TypedText,TaskTime,TypingTime,TimeToFirstKey,SubmitLatency,TaskWPM,TypingWPM,CorrectChars,IncorrectChars,TER
+8,TouchOnly,20,1,whats going on,whats going on,5.51,4.07,0.83,0.00,28.32,38.37,14,0,0.00
+8,TouchOnly,26,2,wednesday is definitely a hot chocolate day,wednesdat is definiftly a hot chocolate day,19.55,18.51,0.86,0.00,25.78,27.23,40,3,0.07
+8,TouchOnly,29,3,what is the mood,what is the mood,6.55,5.15,1.00,0.00,27.50,34.97,16,0,0.00
+8,TouchOnly,7,4,ive never worked with her,ive never worked with her,8.80,7.42,0.96,0.00,32.73,38.83,25,0,0.00
+8,TouchOnly,27,5,thanks for your concern,thanks for your concern,7.95,6.94,0.82,0.00,33.23,38.06,23,0,0.00
+8,TouchOnly,12,6,have a great trip,have a great trip,6.09,4.65,1.07,0.00,31.52,41.27,17,0,0.00
+8,TouchOnly,15,7,its not looking too good is it,its not looking too good is it,10.27,9.11,0.89,0.00,33.87,38.20,30,0,0.00
+8,TouchOnly,19,8,ok with me,ok with me,4.03,2.75,1.06,0.00,26.83,39.21,10,0,0.00
+8,TouchOnly,25,9,i told you silly,i told you silly,5.16,4.13,0.75,0.00,34.90,43.62,16,0,0.00
+8,TouchOnly,23,10,i agreed terms with greg,i agreed terms with greg,8.09,6.93,0.83,0.00,34.12,39.82,24,0,0.00
+8,TouchOnly,10,11,im glad she likes her tree,im glad she likes her tree,7.81,6.98,0.60,0.00,38.41,42.97,26,0,0.00
+8,TouchOnly,14,12,can you help,can you help,4.46,3.27,0.93,0.00,29.61,40.34,12,0,0.00
+8,TouchOnly,24,13,i am at the lake,i am at the lake,5.97,4.90,0.72,0.00,30.15,36.76,16,0,0.00
+8,TouchOnly,17,14,is it over,isiit over,4.32,3.12,0.83,0.00,25.03,34.57,9,1,0.10
+8,TouchOnly,22,15,i talked to duran,t talked to duran,7.16,5.44,0.86,0.00,26.82,35.27,16,1,0.06
+8,TouchOnly,28,16,thursday works better for me,thrrsday works better for me,12.91,11.63,1.05,0.00,25.10,27.85,27,1,0.04
+8,TouchOnly,2,17,take what you can get,take what you can get,8.79,6.19,0.91,0.00,27.30,38.78,21,0,0.00
+8,TouchOnly,16,18,has anyone else heard anything,gas anyone else heard anythung,11.62,9.74,0.91,0.00,29.96,35.72,28,2,0.07
+8,TouchOnly,5,19,im glad you liked it,im glad you liked it,7.57,6.23,1.11,0.00,30.13,36.61,20,0,0.00
+8,TouchOnly,3,20,should systems manage the migration,should systems manage thr migration,12.79,11.42,1.00,0.00,31.89,35.73,34,1,0.03
+8,TouchOnly,21,21,you can talk to becky,you can talk to becky,6.21,5.44,0.48,0.00,38.64,44.11,21,0,0.00
+8,TouchOnly,30,22,i am on my way,i am on my way,4.40,3.38,0.73,0.00,35.49,46.22,14,0,0.00
+8,TouchOnly,18,23,ill get you one,ill gettyou one,9.40,8.12,0.88,0.00,17.86,20.69,14,1,0.07
+8,TouchOnly,6,24,this looks fine,tgus looks fine,5.24,4.13,0.92,0.00,32.03,40.65,13,2,0.13
+8,TouchOnly,9,25,i hope you are feeling better,i hope you are feeling brtter,8.28,7.18,0.79,0.00,40.59,46.79,28,1,0.03
+8,TouchOnly,4,26,i think that is the right answer,i think thtt is the right answer,16.24,14.54,0.89,0.00,22.91,25.59,31,1,0.03
+8,TouchOnly,13,27,did you talk to ava this morning,did you talk to ava thid morinng,12.91,11.57,1.00,0.00,28.80,32.15,29,3,0.09
+8,TouchOnly,8,28,get with mary for format,get with mary for format,8.49,7.14,1.08,0.00,32.50,38.63,24,0,0.00
+8,TouchOnly,11,29,are you getting all the information you need,are you getting all thr unformation yiu need,13.82,12.63,0.93,0.00,37.33,40.85,41,3,0.07
+8,TouchOnly,1,30,have i mentioned how much i love houston traffic,have i mentioned how much i love houston traffiv,17.28,15.92,1.02,0.00,32.64,35.42,47,1,0.02

@@ -2648,7 +2648,7 @@ MonoBehaviour:
   popoutColor: {r: 0.6, g: 0.85, b: 1, a: 1}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   nonSelectableKeyColor: {r: 0.9, g: 0.9, b: 0.9, a: 1}
-  switchDwellSeconds: 0.04
+  switchDwellSeconds: 0.01
   requireContinuousHit: 0
 --- !u!4 &527380463
 Transform:
@@ -4139,7 +4139,7 @@ MonoBehaviour:
   outputFolderName: GazeTouchLogs
   logFileNameSuffix: GazeTouch
   logRateHz: 90
-  participantNumber: 7
+  participantNumber: 11
   participantNumberPlayerPrefsKey: GazeTouchParticipantNumber
 --- !u!4 &795956388
 Transform:
@@ -4169,7 +4169,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhraseMetricsLogger
   outputFolderName: GazeTouchLogs
-  participantNumber: 7
+  participantNumber: 11
   participantNumberPlayerPrefsKey: GazeTouchParticipantNumber
   conditionName: GazeTouch
 --- !u!1 &853569851

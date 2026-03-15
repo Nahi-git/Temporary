@@ -1,0 +1,31 @@
+﻿ParticipantID,Condition,PhraseID,SentenceNumber,TargetText,TypedText,TaskTime,TypingTime,TimeToFirstKey,SubmitLatency,TaskWPM,TypingWPM,CorrectChars,IncorrectChars,TER
+8,GazeTouch,12,1,have a great trip,have avgreat trip,31.07,25.95,2.51,0.00,6.18,7.40,16,1,0.06
+8,GazeTouch,13,2,did you talk to ava this morning,did youdtalk to ava this morning,51.60,47.62,2.43,0.00,7.21,7.81,31,1,0.03
+8,GazeTouch,15,3,its not looking too good is it,its not kookung hoo gmod is it,51.59,45.34,4.00,0.00,6.75,7.68,26,4,0.13
+8,GazeTouch,4,4,i think that is the right answer,i th nk that ix thw righg answec,54.43,50.59,2.29,0.00,6.83,7.35,27,5,0.16
+8,GazeTouch,28,5,thursday works better for me,thurzday worl  better for me,49.74,45.39,2.74,0.00,6.51,7.14,25,3,0.11
+8,GazeTouch,25,6,i told you silly,o told you solly,27.35,23.99,2.10,0.00,6.58,7.50,14,2,0.13
+8,GazeTouch,3,7,should systems manage the migration,snoulx systwms managw thq moirayion,61.90,58.87,1.64,0.00,6.59,6.93,27,8,0.23
+8,GazeTouch,24,8,i am at the lake,o am at the lake,25.15,21.82,2.21,0.00,7.16,8.25,15,1,0.06
+8,GazeTouch,17,9,is it over,is it over,15.99,11.55,2.28,0.00,6.76,9.35,10,0,0.00
+8,GazeTouch,23,10,i agreed terms with greg,o agreed terms woth greg,32.79,29.88,1.95,0.00,8.42,9.24,22,2,0.08
+8,GazeTouch,26,11,wednesday is definitely a hot chocolate day,wedmesdzy os degnnitepy abnot vhocolate dau,70.75,67.86,1.53,0.00,7.12,7.43,33,10,0.23
+8,GazeTouch,22,12,i talked to duran,u galked to dkran,30.37,27.25,2.07,0.00,6.32,7.04,14,3,0.18
+8,GazeTouch,11,13,are you getting all the information you need,arekyouvgwgting apl t e incormahoon yok nerd,68.85,66.21,1.38,0.00,7.49,7.79,33,11,0.25
+8,GazeTouch,20,14,whats going on,whats boing on,23.65,19.47,2.10,0.00,6.60,8.01,13,1,0.07
+8,GazeTouch,8,15,get with mary for format,get wotn mary for format,37.57,33.53,2.11,0.00,7.35,8.23,22,2,0.08
+8,GazeTouch,10,16,im glad she likes her tree,im glad she likezvher tfee,39.48,35.78,2.04,0.00,7.60,8.39,23,3,0.12
+8,GazeTouch,27,17,thanks for your concern,thanks cor youd concefn,37.72,35.06,1.41,0.00,7.00,7.53,20,3,0.13
+8,GazeTouch,18,18,ill get you one,ipl get you one,22.19,18.30,2.66,0.00,7.57,9.18,14,1,0.07
+8,GazeTouch,1,19,have i mentioned how much i love houston traffic,havedi mengoonedvhuw much i love houston traguic,78.45,75.88,1.23,0.00,7.19,7.43,41,7,0.15
+8,GazeTouch,9,20,i hope you are feeling better,i hopecypu are fefling bettef,44.27,40.71,2.63,0.00,7.59,8.25,25,4,0.14
+8,GazeTouch,5,21,im glad you liked it,im vlad you liked ot,28.06,24.72,1.89,0.00,8.13,9.22,18,2,0.10
+8,GazeTouch,14,22,can you help,can you hepl,16.91,13.22,2.19,0.00,7.81,9.98,10,2,0.17
+8,GazeTouch,2,23,take what you can get,take wnag hou can get,34.03,31.07,1.99,0.00,7.05,7.73,18,3,0.14
+8,GazeTouch,6,24,this looks fine,tbos looks fine,24.26,20.02,3.07,0.00,6.93,8.39,13,2,0.13
+8,GazeTouch,29,25,what is the mood,wnat is the moox,22.76,19.45,1.91,0.00,7.91,9.26,14,2,0.13
+8,GazeTouch,21,26,you can talk to becky,you can galk to becky,31.60,27.68,1.93,0.00,7.59,8.67,20,1,0.05
+8,GazeTouch,7,27,ive never worked with her,kve neveg worked with her,37.64,34.43,2.05,0.00,7.65,8.37,23,2,0.08
+8,GazeTouch,16,28,has anyone else heard anything,has a yone else heard anythong,45.68,42.53,2.16,0.00,7.62,8.18,28,2,0.07
+8,GazeTouch,30,29,i am on my way,i qm oncmt way,21.03,18.22,1.76,0.00,7.42,8.56,11,3,0.21
+8,GazeTouch,19,30,ok with me,ok with me,15.54,10.87,3.01,0.00,6.95,9.94,10,0,0.00
