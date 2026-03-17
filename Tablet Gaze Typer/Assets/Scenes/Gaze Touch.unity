@@ -4139,7 +4139,7 @@ MonoBehaviour:
   outputFolderName: GazeTouchLogs
   logFileNameSuffix: GazeTouch
   logRateHz: 90
-  participantNumber: 11
+  participantNumber: 12
   participantNumberPlayerPrefsKey: GazeTouchParticipantNumber
 --- !u!4 &795956388
 Transform:
@@ -4169,7 +4169,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhraseMetricsLogger
   outputFolderName: GazeTouchLogs
-  participantNumber: 11
+  participantNumber: 12
   participantNumberPlayerPrefsKey: GazeTouchParticipantNumber
   conditionName: GazeTouch
 --- !u!1 &853569851
