@@ -1,0 +1,31 @@
+﻿ParticipantID,Condition,PhraseID,SentenceNumber,TargetText,TypedText,TaskTime,TypingTime,TimeToFirstKey,SubmitLatency,TaskWPM,TypingWPM,CorrectChars,IncorrectChars,TER
+12,GazeTouch,11,1,are you getting all the information you need,are you getting alh the pnformatpon you need,102.82,96.99,3.84,0.00,5.02,5.32,41,3,0.07
+12,GazeTouch,13,2,did you talk to ava this morning,diq you talk to ava this morning,61.11,55.41,3.76,0.00,6.09,6.71,31,1,0.03
+12,GazeTouch,3,3,should systems manage the migration,shotla aystwms mavagw the mygratiin,69.19,65.48,1.89,0.00,5.90,6.23,27,8,0.23
+12,GazeTouch,30,4,i am on my way,i am ob my way,28.89,24.80,2.24,0.00,5.40,6.29,13,1,0.07
+12,GazeTouch,16,5,has anyone else heard anything,has anronw else heaea avythigg,58.65,55.16,2.35,0.00,5.93,6.31,24,6,0.20
+12,GazeTouch,8,6,get with mary for format,get with mary foe formtt,41.86,35.49,21.63,0.00,6.59,7.78,22,2,0.08
+12,GazeTouch,15,7,its not looking too good is it,its nor looking too goid is it,50.51,47.25,1.63,0.00,6.89,7.37,28,2,0.07
+12,GazeTouch,5,8,im glad you liked it,im glad you lijed it,42.64,39.04,1.71,0.00,5.35,5.84,19,1,0.05
+12,GazeTouch,10,9,im glad she likes her tree,im gladcshe likws her tree,49.94,45.40,2.35,0.00,6.01,6.61,24,2,0.08
+12,GazeTouch,24,10,i am at the lake,i am thwthe lake,31.28,28.17,1.96,0.00,5.75,6.39,13,3,0.19
+12,GazeTouch,25,11,i told you silly,i told toy silly,27.71,23.73,2.27,0.00,6.50,7.59,14,2,0.13
+12,GazeTouch,23,12,i agreed terms with greg,i qsrwed tqrms with greg,45.09,38.78,2.08,0.00,6.12,7.12,20,4,0.17
+12,GazeTouch,22,13,i talked to duran,i taljqq ro duray,36.86,33.76,2.17,0.00,5.21,5.69,12,5,0.29
+12,GazeTouch,28,14,thursday works better for me,thursday works better for he,51.23,47.57,1.94,0.00,6.32,6.81,27,1,0.04
+12,GazeTouch,6,15,this looks fine,rfis looks fine,27.57,22.06,3.75,0.00,6.09,7.62,13,2,0.13
+12,GazeTouch,21,16,you can talk to becky,yoy cabhtalk to beckt,36.73,33.07,2.03,0.00,6.53,7.26,17,4,0.19
+12,GazeTouch,9,17,i hope you are feeling better,y hopw you are feeling better,49.73,44.10,1.63,0.00,6.76,7.62,27,2,0.07
+12,GazeTouch,14,18,can you help,can you help,22.88,19.28,2.28,0.00,5.77,6.85,12,0,0.00
+12,GazeTouch,26,19,wednesday is definitely a hot chocolate day,wednwsday is aefinitely a hot chocolate day,78.38,75.56,1.33,0.00,6.43,6.67,41,2,0.05
+12,GazeTouch,20,20,whats going on,whats going og,24.58,20.48,2.17,0.00,6.35,7.62,13,1,0.07
+12,GazeTouch,18,21,ill get you one,tlk gwt yoy one,30.18,23.47,1.76,0.00,5.57,7.16,11,4,0.27
+12,GazeTouch,29,22,what is the mood,what is the mood,28.41,23.82,2.15,0.00,6.34,7.56,16,0,0.00
+12,GazeTouch,7,23,ive never worked with her,ive never worked with ger,43.74,40.11,2.43,0.00,6.58,7.18,24,1,0.04
+12,GazeTouch,19,24,ok with me,oj witg me,20.40,15.20,2.12,0.00,5.30,7.10,8,2,0.20
+12,GazeTouch,2,25,take what you can get,take what you can get,34.51,30.44,2.41,0.00,6.95,7.88,21,0,0.00
+12,GazeTouch,17,26,is it over,is it over,15.91,12.11,1.80,0.00,6.79,8.92,10,0,0.00
+12,GazeTouch,4,27,i think that is the right answer,u tginj that us thw thght answer,73.56,68.12,2.29,0.00,5.06,5.46,25,7,0.22
+12,GazeTouch,27,28,thanks for your concern,thanks for your concern,41.67,37.87,2.28,0.00,6.34,6.97,23,0,0.00
+12,GazeTouch,1,29,have i mentioned how much i love houston traffic,have i mentioned how much u love hoystof traffuc,93.06,88.96,2.54,0.00,6.06,6.34,44,4,0.08
+12,GazeTouch,12,30,have a great trip,have a great trip,30.61,26.61,2.52,0.00,6.27,7.22,17,0,0.00
